@@ -8,6 +8,11 @@ edition = "2021"
 [dependencies]
 poise = "0.6.1"
 serenity = "0.12.1"
-shuttle-secrets = "0.39.0"
 tokio = { version = "1.36.0", features = ["full"] }
 tracing = "0.1.40"
+serde = { version = "1.0", features = ["derive"] }
+toml = "0.8.10"
+rand = "0.8.5"
+ctrlc = "3.4.2"
+env_logger = "0.11.2"
+tracing-log = "0.2.0"

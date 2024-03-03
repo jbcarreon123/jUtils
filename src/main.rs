@@ -1,20 +1,55 @@
 pub mod commands;
 pub mod types;
+pub mod config;
+pub mod utils;
 
-use std::env;
+use rand::seq::SliceRandom;
+use std::thread;
+use std::time::Duration;
+use poise::async_trait;
 use types::*;
-use commands::ping::*;
+use commands::utils::*;
+use commands::about::*;
 use poise::serenity_prelude as serenity;
-use poise::CreateReply;
-use poise::serenity_prelude::Embed;
 use serenity::prelude::*;
-use poise::structs;
-use poise::serenity_prelude::ShardStageUpdateEvent;
+use poise::serenity_prelude::ActivityData;
+use poise::serenity_prelude::Ready;
 use tracing::log::{ debug, info, warn, error, Level };
+
+struct Handler;
+
+#[async_trait]
+impl EventHandler for Handler {
+    async fn ready(&self, ctx: poise::serenity_prelude::Context, ready: Ready) {
+        println!("{} is connected!", ready.user.name);
+        let config = config::load_config().expect("Expected the config to be found.");
+        let mut strings = config.motd.motd_strings;
+
+        let handle = thread::spawn(move || {
+            for i in 0.. {
+                if strings.is_empty() {
+                    println!("The vector is empty!");
+                    return;
+                }
+                let mut rng = rand::thread_rng();
+                strings.shuffle(&mut rng);
+                let helpstr = if config.motd.include_help_prefix {
+                    format!("{}help | ", config.discordbot.prefix)
+                } else {
+                    String::new()
+                };
+
+                ctx.shard.set_activity(Some(ActivityData::custom(format!("{}{}", helpstr, strings.choose(&mut rng).unwrap()))));
+                thread::sleep(Duration::from_secs(config.motd.motd_timeout));
+            }
+        });
+    }
+}
 
 #[tokio::main]
 async fn main() {
-    let token = "MTAyNzIwMTc0NTY4NTg1NjI1Ng.Gz8-0J.kI8_fEvvnfWs2vgZ4fkJYWtcdlOekKsPLg0Wys";
+    let config = config::load_config().expect("Expected the config to be found.");
+    let token = config.discordbot.token;
     let intents = serenity::GatewayIntents::non_privileged()
         | GatewayIntents::GUILD_MESSAGES
         | GatewayIntents::DIRECT_MESSAGES
@@ -22,9 +57,9 @@ async fn main() {
 
     let framework = poise::Framework::builder()
         .options(poise::FrameworkOptions {
-            commands: vec![ping()],
+            commands: vec![ping::ping(), help::help(), about()],
             prefix_options: poise::PrefixFrameworkOptions {
-                prefix: Some("b.".into()),
+                prefix: Some(config.discordbot.prefix.into()),
                 mention_as_prefix: true,
                 ..Default::default()
             },
@@ -35,7 +70,7 @@ async fn main() {
 							"Missing code block."
 								.to_owned()
 						} else {
-							format!("`{}`: {}", ctx.command().name, error.to_string())
+							format!("`{}{}`: {}", ctx.prefix(), ctx.command().name, error.to_string())
 						};
 
 						if let Err(e) = ctx.say(response).await {
@@ -59,6 +94,7 @@ async fn main() {
         .build();
 
     let client = serenity::ClientBuilder::new(token, intents)
+        .event_handler(Handler)
         .framework(framework)
         .await;
     client.unwrap().start().await.unwrap();
