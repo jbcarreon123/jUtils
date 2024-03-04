@@ -8,6 +8,7 @@ use commands::about::*;
 use commands::moderation::*;
 
 use rand::seq::SliceRandom;
+use serenity::model::colour::Colour;
 use std::thread;
 use poise::serenity_prelude::CreateEmbed;
 use std::time::Duration;
@@ -70,27 +71,48 @@ async fn main() {
             on_error: |error| {
                 Box::pin(async move {
 					if let poise::FrameworkError::ArgumentParse { error, ctx, .. } = error {
-						let response = if error.is::<poise::CodeBlockError>() {
-							"Missing code block."
-								.to_owned()
-						} else {
-							format!("`{}{}`: {}", ctx.prefix(), ctx.command().name, error.to_string())
-						};
+						let embed = CreateEmbed::error()
+                            .title("Argument parse error")
+                            .description(error.to_string());
 
-						if let Err(e) = ctx.say(response).await {
-							warn!("{}", e)
-						}
+                        if let Err(e) = ctx.send(poise::CreateReply::default()
+                            .embed(embed)
+                            .reply(true)
+                            .allowed_mentions(am::new().all_roles(false).all_users(false).everyone(false))
+                        ).await {
+                            warn!("{}", e)
+                        }
 					} else if let poise::FrameworkError::Command { ctx, error, .. } = error {
-						if let Err(e) = ctx.say(error.to_string()).await {
-							warn!("{}", e)
-						}
+						let embed = CreateEmbed::error()
+                            .title("An error occured while running the command!")
+                            .description(error.to_string());
+
+                        if let Err(e) = ctx.send(poise::CreateReply::default()
+                            .embed(embed)
+                            .reply(true)
+                            .allowed_mentions(am::new().all_roles(false).all_users(false).everyone(false))
+                        ).await {
+                            warn!("{}", e)
+                        }
 					} else if let poise::FrameworkError::MissingUserPermissions { missing_permissions, ctx, .. } = error {
                         let perms = missing_permissions.expect("Permissions expected");
+                        
                         let permissions_names = perms.iter_names().map(|name| name.0).collect::<Vec<&str>>().join(", ");
-                        let embed = CreateEmbed::default()
+                        let embed = CreateEmbed::error()
                             .title("Access denied")
                             .description("You don't have enough permissions to use this command!")
                             .field("Required Permissions", permissions_names, true);
+
+                        if let Err(e) = ctx.send(poise::CreateReply::default()
+                            .embed(embed)
+                            .reply(true)
+                            .allowed_mentions(am::new().all_roles(false).all_users(false).everyone(false))
+                        ).await {
+                            warn!("{}", e)
+                        }
+                    } else if let poise::FrameworkError::CommandPanic { payload, ctx, .. } = error {
+                        let embed = CreateEmbed::error()
+                            .title("A panic has occured while executing this command!");
 
                         if let Err(e) = ctx.send(poise::CreateReply::default()
                             .embed(embed)

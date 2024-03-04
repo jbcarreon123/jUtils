@@ -3,6 +3,7 @@ use serde::Deserialize;
 use std::fs::File;
 use std::io::Read;
 use std::ptr::null;
+use serenity::model::colour::Colour;
 
 #[derive(Debug, Deserialize)]
 pub struct DiscordBotConfig {
@@ -34,12 +35,36 @@ pub struct MOTDConfig {
 }
 
 #[derive(Debug, Deserialize)]
+pub struct AboutConfig {
+    pub bot_hoster: u64,
+    pub description: String,
+    pub color: [u8; 3]
+}
+
+#[derive(Debug, Deserialize)]
+pub struct jUtilsConfig {
+    pub modified: bool
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ColorsConfig {
+    pub primary: [u8; 3],
+    pub secondary: [u8; 3],
+    pub success: [u8; 3],
+    pub error: [u8; 3],
+    pub invis: [u8; 3]
+}
+
+#[derive(Debug, Deserialize)]
 pub struct Config {
     pub discordbot: DiscordBotConfig,
     pub database: DatabaseConfig,
     pub github: GitHubConfig,
     pub rsi: RocScamIndexConfig,
-    pub motd: MOTDConfig
+    pub motd: MOTDConfig,
+    pub about: AboutConfig,
+    pub jutils: jUtilsConfig,
+    pub colors: ColorsConfig,
 }
 
 pub fn load_config() -> Result<Config, Box<dyn std::error::Error>> {
@@ -47,7 +72,7 @@ pub fn load_config() -> Result<Config, Box<dyn std::error::Error>> {
     let mut content = String::new();
     file.read_to_string(&mut content)?;
 
-    let config: Config = toml::from_str(&content)?;
+    let mut config: Config = toml::from_str(&content)?;
 
     Ok(config)
 }

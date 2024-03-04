@@ -34,6 +34,8 @@ pub async fn timeout(
     #[description="The timeout reason, if any."]
     reason: Option<String>
 ) -> Result<(), poise::serenity_prelude::Error> {
+    _ = ctx.defer().await;
+
     let cu = ctx.http().get_current_user().await.expect("Expected a current user.");
     let rea: String = match reason {
         Some(str) => str,

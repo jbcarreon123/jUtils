@@ -21,6 +21,8 @@ pub async fn help(
 	#[autocomplete = "poise::builtins::autocomplete_command"]
 	command: Option<String>,
 ) -> Result<(), Error> {
+	_ = ctx.defer().await;
+
     let cu = ctx.http().get_current_user().await.expect("Expected a current user.");
 	let fields = get_all_commands_as_embedfields(ctx).await.expect("Expected output");
 	let embed = CreateEmbed::default()

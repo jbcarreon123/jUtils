@@ -5,6 +5,7 @@ use poise::serenity_prelude::Http;
 use serenity::CurrentUser;
 use poise::serenity_prelude::PartialGuild;
 use poise::serenity_prelude::Mentionable;
+use std::future::IntoFuture;
 use std::time::{Duration, UNIX_EPOCH};
 use tokio::time::error::Elapsed;
 use crate::config;
@@ -28,23 +29,42 @@ pub async fn get_all_commands_as_embedfields<U, E>(
 
     let mut menu = Vec::<(String, String, bool)>::new();
     for command in commands {
+        let permitted = if ctx.guild_id().is_none() {
+            if command.dm_only {
+                true
+            } else {
+                false
+            }
+        } else {
+            let g = ctx.guild().expect("Expected guild").clone();
+            let gusr = match g.member(ctx.http().clone(), ctx.author().clone().id).await {
+                Ok(u) => u,
+                _Error => continue
+            };
+            let perms = gusr.permissions(ctx.cache().clone()).expect("Expected guild member permissions").clone();
+            perms.contains(command.required_permissions)
+        };
+
+        if command.hide_in_help || !permitted {
+            continue
+        }
+
         let desc: String = match &command.description {
             Some(string) => string.clone(),
             None => "No description".to_owned()
         };
-        let pref = if ctx.prefix().starts_with("<") {
+        let cat: String = match &command.category {
+            Some(str) => format!("Category: {}\n", str),
+            None => "".to_owned()
+        };
+        let pref = if ctx.prefix().starts_with("<@") {
             config.discordbot.prefix.clone()
         } else {
             ctx.prefix().to_owned()
         };
-        let space = if ctx.prefix().starts_with("<") {
-            " "
-        } else {
-            ""
-        };
         menu.push((
-            format!("{}{}{}", pref, space, command.name),
-            desc,
+            format!("{}{}", pref, command.name),
+            format!("{}{}", cat, desc),
             true
         ))
     }
