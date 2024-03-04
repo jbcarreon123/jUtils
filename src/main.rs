@@ -3,13 +3,17 @@ pub mod types;
 pub mod config;
 pub mod utils;
 
-use rand::seq::SliceRandom;
-use std::thread;
-use std::time::Duration;
-use poise::async_trait;
-use types::*;
 use commands::utils::*;
 use commands::about::*;
+use commands::moderation::*;
+
+use rand::seq::SliceRandom;
+use std::thread;
+use poise::serenity_prelude::CreateEmbed;
+use std::time::Duration;
+use poise::serenity_prelude::CreateAllowedMentions as am;
+use poise::async_trait;
+use types::*;
 use poise::serenity_prelude as serenity;
 use serenity::prelude::*;
 use poise::serenity_prelude::ActivityData;
@@ -57,7 +61,7 @@ async fn main() {
 
     let framework = poise::Framework::builder()
         .options(poise::FrameworkOptions {
-            commands: vec![ping::ping(), help::help(), about()],
+            commands: vec![ping::ping(), help::help(), about(), timeout::timeout()],
             prefix_options: poise::PrefixFrameworkOptions {
                 prefix: Some(config.discordbot.prefix.into()),
                 mention_as_prefix: true,
@@ -80,7 +84,22 @@ async fn main() {
 						if let Err(e) = ctx.say(error.to_string()).await {
 							warn!("{}", e)
 						}
-					}
+					} else if let poise::FrameworkError::MissingUserPermissions { missing_permissions, ctx, .. } = error {
+                        let perms = missing_permissions.expect("Permissions expected");
+                        let permissions_names = perms.iter_names().map(|name| name.0).collect::<Vec<&str>>().join(", ");
+                        let embed = CreateEmbed::default()
+                            .title("Access denied")
+                            .description("You don't have enough permissions to use this command!")
+                            .field("Required Permissions", permissions_names, true);
+
+                        if let Err(e) = ctx.send(poise::CreateReply::default()
+                            .embed(embed)
+                            .reply(true)
+                            .allowed_mentions(am::new().all_roles(false).all_users(false).everyone(false))
+                        ).await {
+                            warn!("{}", e)
+                        }
+                    }
 				})
             },
             ..Default::default()
