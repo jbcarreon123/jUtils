@@ -1,6 +1,6 @@
 use poise::serenity_prelude as serenity;
 use poise::serenity_prelude::Error;
-use crate::config;
+use crate::{config, EmbedHelper};
 use crate::types::Context;
 use poise::serenity_prelude::{CreateEmbed, CreateActionRow, CreateButton};
 use poise::serenity_prelude::CreateAllowedMentions as am;
@@ -28,7 +28,7 @@ pub async fn about(
 
     let c = config.about.color;
 
-    let embed = CreateEmbed::default()
+    let embed = CreateEmbed::primary()
         .title(format!("{}", cu.name))
         .description(config.about.description)
         .thumbnail(avatar_url)

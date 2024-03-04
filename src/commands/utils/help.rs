@@ -1,5 +1,6 @@
 use poise::serenity_prelude::Error;
 use crate::types::Context;
+use crate::EmbedHelper;
 use poise::serenity_prelude::CreateEmbed;
 use poise::serenity_prelude::CreateAllowedMentions as am;
 use crate::utils::*;
@@ -21,9 +22,8 @@ pub async fn help(
 
     let cu = ctx.http().get_current_user().await.expect("Expected a current user.");
 	let fields = get_all_commands_as_embedfields(ctx).await.expect("Expected output");
-	let embed = CreateEmbed::default()
+	let embed = CreateEmbed::primary()
 		.title(format!("Help for {}", cu.name))
-		.description("test")
 		.fields(fields[0].clone());
     
 	ctx.send(poise::CreateReply::default()

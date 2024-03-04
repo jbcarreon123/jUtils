@@ -1,4 +1,5 @@
 use crate::types::Context;
+use crate::EmbedHelper;
 use poise::serenity_prelude::CreateEmbed;
 use poise::serenity_prelude::CreateAllowedMentions as am;
 use poise::serenity_prelude::*;
@@ -37,19 +38,24 @@ pub async fn timeout(
     let guild = ctx.http().get_guild(ctx.guild_id().expect("Expected GuildId")).await.expect("Expected Guild");
     let embed: CreateEmbed =
     if &user.user == ctx.author() {
-        let em = CreateEmbed::default()
+        let em = CreateEmbed::error()
             .title("Failed to time out user")
             .description("You cannot time out yourself.");
         em
     } else if compare_roles(ctx.serenity_context(), guild, user.user.id).await {
-        let em = CreateEmbed::default()
+        let em = CreateEmbed::error()
             .title("Failed to time out user")
             .description(format!("{} can't time out users that has a higher role!", cu.name));
+        em
+    } else if user.user.bot {
+        let em = CreateEmbed::error()
+            .title("Failed to time out user")
+            .description("User is a bot.");
         em
     } else {
         match user.edit(ctx.http(), EditMember::new().disable_communication_until(duration_to_rfc3339(dur))).await {
             Ok(_) => {
-                let em = CreateEmbed::default()
+                let em = CreateEmbed::success()
                     .title(format!("{} has been timed out", user.display_name()))
                     .description(rea)
                     .field("Duration", format_duration(dur), true)
@@ -57,7 +63,7 @@ pub async fn timeout(
                 em
             }
             Err(e) => {
-                let em = CreateEmbed::default()
+                let em = CreateEmbed::error()
                     .title("Failed to time out user")
                     .description(e.to_string());
                 em
