@@ -1,10 +1,6 @@
-use poise::serenity_prelude as serenity;
 use poise::serenity_prelude::Error;
-use poise::serenity_prelude::Mentionable;
 use crate::types::Context;
 use poise::serenity_prelude::CreateEmbed;
-use poise::serenity_prelude::json::Value;
-use crate::config;
 use poise::serenity_prelude::CreateAllowedMentions as am;
 use crate::utils::*;
 

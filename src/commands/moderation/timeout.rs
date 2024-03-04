@@ -1,17 +1,9 @@
-use std::default;
-use std::error::Error;
-
-use poise::serenity_prelude as serenity;
 use crate::types::Context;
 use poise::serenity_prelude::CreateEmbed;
 use poise::serenity_prelude::CreateAllowedMentions as am;
-use poise::serenity_prelude::Permissions;
-use poise::command;
 use poise::serenity_prelude::*;
-use poise::serenity_prelude::Guild;
 use duration_string::DurationString;
 use std::time::Duration;
-use chrono::format::strftime;
 use crate::utils::*;
 
 /// Times out a user.
@@ -64,10 +56,10 @@ pub async fn timeout(
                     .field("Timed out by", ctx.author().mention().to_string(), true);
                 em
             }
-            Err(E) => {
+            Err(e) => {
                 let em = CreateEmbed::default()
                     .title("Failed to time out user")
-                    .description(E.to_string());
+                    .description(e.to_string());
                 em
             }
         }

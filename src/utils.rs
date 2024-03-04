@@ -1,17 +1,8 @@
 use poise::serenity_prelude as serenity;
-use serenity::builder::CreateEmbed;
-use serenity::EmbedField;
-use poise::serenity_prelude::Http;
-use serenity::CurrentUser;
 use poise::serenity_prelude::PartialGuild;
-use poise::serenity_prelude::Mentionable;
-use std::future::IntoFuture;
-use std::time::{Duration, UNIX_EPOCH};
-use tokio::time::error::Elapsed;
+use std::time::Duration;
 use crate::config;
 use poise::serenity_prelude::Context;
-use poise::serenity_prelude::json::Value;
-use poise::serenity_prelude::Guild;
 use poise::serenity_prelude::UserId;
 use poise::Command;
 use chrono::DateTime;
@@ -37,11 +28,11 @@ pub async fn get_all_commands_as_embedfields<U, E>(
             }
         } else {
             let g = ctx.guild().expect("Expected guild").clone();
-            let gusr = match g.member(ctx.http().clone(), ctx.author().clone().id).await {
+            let gusr = match g.member(ctx.http(), ctx.author().clone().id).await {
                 Ok(u) => u,
-                _Error => continue
+                _error => continue
             };
-            let perms = gusr.permissions(ctx.cache().clone()).expect("Expected guild member permissions").clone();
+            let perms = gusr.permissions(ctx.cache()).expect("Expected guild member permissions").clone();
             perms.contains(command.required_permissions)
         };
 
@@ -111,11 +102,11 @@ pub async fn compare_roles(ctx: &Context, guild: PartialGuild, user_id: UserId) 
     let cu = ctx.http.get_current_user().await.expect("Expected a current user.");
     let bot_member = match guild.member(ctx.http.clone(), cu.id).await {
         Ok(member) => member,
-        Err(E) => return false
+        Err(_) => return false
     };
     let user_member = match guild.member(ctx.http.clone(), user_id).await {
         Ok(member) => member,
-        Err(E) => return false,
+        Err(_) => return false,
     };
 
     let bhighest_role = bot_member.highest_role_info(ctx.cache.clone()).expect("Expected roles");

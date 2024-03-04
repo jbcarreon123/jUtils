@@ -1,9 +1,5 @@
-use poise::serenity_prelude::CreateAllowedMentions as am;
-use poise::serenity_prelude::CreateAllowedMentions;
-use poise::serenity_prelude::json::Value;
-use core::array::IntoIter;
 use poise::serenity_prelude::Colour;
-use poise::serenity_prelude::{CreateEmbed, CreateActionRow, CreateButton};
+use poise::serenity_prelude::CreateEmbed;
 
 use crate::config;
 

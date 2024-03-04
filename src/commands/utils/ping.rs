@@ -1,6 +1,4 @@
-use poise::serenity_prelude as serenity;
 use poise::serenity_prelude::Error;
-use crate::config;
 use crate::types::Context;
 use poise::serenity_prelude::CreateEmbed;
 use poise::serenity_prelude::CreateAllowedMentions as am;
@@ -13,7 +11,6 @@ pub async fn ping(
 ) -> Result<(), Error> {
     _ = ctx.defer().await;
     let ping = ctx.ping().await;
-    let config = config::load_config().expect("Expected the config to be found.");
 
     let embed = CreateEmbed::success()
         .title("Pong! :ping_pong:")

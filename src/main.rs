@@ -8,7 +8,6 @@ use commands::about::*;
 use commands::moderation::*;
 
 use rand::seq::SliceRandom;
-use serenity::model::colour::Colour;
 use std::thread;
 use poise::serenity_prelude::CreateEmbed;
 use std::time::Duration;
@@ -19,7 +18,7 @@ use poise::serenity_prelude as serenity;
 use serenity::prelude::*;
 use poise::serenity_prelude::ActivityData;
 use poise::serenity_prelude::Ready;
-use tracing::log::{ debug, info, warn, error, Level };
+use tracing::log::warn;
 
 struct Handler;
 
@@ -30,8 +29,8 @@ impl EventHandler for Handler {
         let config = config::load_config().expect("Expected the config to be found.");
         let mut strings = config.motd.motd_strings;
 
-        let handle = thread::spawn(move || {
-            for i in 0.. {
+        let _handle = thread::spawn(move || {
+            for _i in 0.. {
                 if strings.is_empty() {
                     println!("The vector is empty!");
                     return;
@@ -110,7 +109,7 @@ async fn main() {
                         ).await {
                             warn!("{}", e)
                         }
-                    } else if let poise::FrameworkError::CommandPanic { payload, ctx, .. } = error {
+                    } else if let poise::FrameworkError::CommandPanic { ctx, .. } = error {
                         let embed = CreateEmbed::error()
                             .title("A panic has occured while executing this command!");
 

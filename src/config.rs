@@ -1,9 +1,6 @@
-use toml::*;
 use serde::Deserialize;
 use std::fs::File;
 use std::io::Read;
-use std::ptr::null;
-use serenity::model::colour::Colour;
 
 #[derive(Debug, Deserialize)]
 pub struct DiscordBotConfig {
@@ -42,7 +39,7 @@ pub struct AboutConfig {
 }
 
 #[derive(Debug, Deserialize)]
-pub struct jUtilsConfig {
+pub struct JUtilsConfig {
     pub modified: bool
 }
 
@@ -63,7 +60,7 @@ pub struct Config {
     pub rsi: RocScamIndexConfig,
     pub motd: MOTDConfig,
     pub about: AboutConfig,
-    pub jutils: jUtilsConfig,
+    pub jutils: JUtilsConfig,
     pub colors: ColorsConfig,
 }
 
@@ -72,7 +69,7 @@ pub fn load_config() -> Result<Config, Box<dyn std::error::Error>> {
     let mut content = String::new();
     file.read_to_string(&mut content)?;
 
-    let mut config: Config = toml::from_str(&content)?;
+    let config: Config = toml::from_str(&content)?;
 
     Ok(config)
 }
