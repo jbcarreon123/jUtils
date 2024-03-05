@@ -20,17 +20,30 @@ pub async fn help(
 ) -> Result<(), Error> {
 	_ = ctx.defer().await;
 
-    let cu = ctx.http().get_current_user().await.expect("Expected a current user.");
-	let fields = get_all_commands_as_embedfields(ctx).await.expect("Expected output");
-	let embed = CreateEmbed::primary()
-		.title(format!("Help for {}", cu.name))
-		.fields(fields[0].clone());
-    
-	ctx.send(poise::CreateReply::default()
-		.embed(embed)
-        .reply(true)
-        .allowed_mentions(am::new().all_roles(false).all_users(false).everyone(false))
-    ).await?;
+	if command.is_none() {
+		let cu = ctx.http().get_current_user().await.expect("Expected a current user.");
+		let fields = get_all_commands_as_embedfields(ctx).await.expect("Expected output");
+		let embed = CreateEmbed::primary()
+			.title(format!("Help for {}", cu.name))
+			.fields(fields[0].clone());
+		
+		ctx.send(poise::CreateReply::default()
+			.embed(embed)
+			.reply(true)
+			.allowed_mentions(am::new().all_roles(false).all_users(false).everyone(false))
+		).await?;
+	} else {
+		let cmd = match get_command(ctx, command.unwrap()).await {
+			Ok(t) => t,
+			Err(e) => return Err(e)
+		};
+
+		ctx.send(poise::CreateReply::default()
+			.embed(cmd)
+			.reply(true)
+			.allowed_mentions(am::new().all_roles(false).all_users(false).everyone(false))
+		).await?;
+	}
 
 	Ok(())
 }

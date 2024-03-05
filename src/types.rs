@@ -1,4 +1,5 @@
 use poise::serenity_prelude::Colour;
+use std::fmt;
 use poise::serenity_prelude::CreateEmbed;
 
 use crate::config;

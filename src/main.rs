@@ -61,7 +61,16 @@ async fn main() {
 
     let framework = poise::Framework::builder()
         .options(poise::FrameworkOptions {
-            commands: vec![ping::ping(), help::help(), about(), timeout::timeout()],
+            commands: vec![
+                ping::ping(),
+                help::help(),
+                about(),
+                timeout::timeout(),
+                crates::crates(),
+                npm::npm(),
+                nuget::nuget(),
+                pypi::pypi(),
+                github::github()],
             prefix_options: poise::PrefixFrameworkOptions {
                 prefix: Some(config.discordbot.prefix.into()),
                 mention_as_prefix: true,
@@ -118,6 +127,12 @@ async fn main() {
                             .reply(true)
                             .allowed_mentions(am::new().all_roles(false).all_users(false).everyone(false))
                         ).await {
+                            warn!("{}", e)
+                        }
+                    } else if let poise::FrameworkError::UnknownCommand { ctx, msg, prefix, msg_content, framework, invocation_data, trigger, .. } = error {
+                        let cmd = msg_content.split(" ").next();
+
+                        if let Err(e) = msg.reply(ctx.http(), format!("There is no such command called **{}**!", cmd.unwrap_or("{unknown}"))).await {
                             warn!("{}", e)
                         }
                     }

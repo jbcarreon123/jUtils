@@ -5,7 +5,7 @@ use poise::serenity_prelude::CreateAllowedMentions as am;
 use crate::types::EmbedHelper;
 
 /// Pings the bot.
-#[poise::command(slash_command, prefix_command, category="Utilities")]
+#[poise::command(slash_command, prefix_command, category="Utilities", aliases("pong"))]
 pub async fn ping(
     ctx: Context<'_>
 ) -> Result<(), Error> {

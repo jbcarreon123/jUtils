@@ -3,8 +3,6 @@ use crate::EmbedHelper;
 use poise::serenity_prelude::CreateEmbed;
 use poise::serenity_prelude::CreateAllowedMentions as am;
 use poise::serenity_prelude::*;
-use duration_string::DurationString;
-use std::time::Duration;
 use crate::utils::*;
 
 /// Times out a user.
@@ -20,11 +18,9 @@ use crate::utils::*;
 )]
 pub async fn timeout(
     ctx: Context<'_>,
-    #[description="The user to time out."]
-    mut user: Member,
-    #[description="The timeout duration."]
-    time: String,
-    #[description="The timeout reason, if any."]
+    #[description="The user to kick."]
+    user: Member,
+    #[description="The kick reason, if any."]
     reason: Option<String>
 ) -> Result<(), poise::serenity_prelude::Error> {
     _ = ctx.defer().await;
@@ -34,39 +30,35 @@ pub async fn timeout(
         Some(str) => str,
         None => "No reason provided".to_owned()
     };
-    let dur: Duration = DurationString::from_string(String::from(time)).unwrap().into();
     let guild = ctx.http().get_guild(ctx.guild_id().expect("Expected GuildId")).await.expect("Expected Guild");
     let embed: CreateEmbed =
     if &user.user == ctx.author() {
         let em = CreateEmbed::error()
-            .title("Failed to time out user")
-            .description("You cannot time out yourself.");
+            .title("Failed to kick user")
+            .description("You cannot kick yourself.");
         em
     } else if compare_roles(ctx.serenity_context(), guild, user.user.id).await {
         let em = CreateEmbed::error()
-            .title("Failed to time out user")
-            .description(format!("{} can't time out users that has a higher role!", cu.name));
+            .title("Failed to kick user")
+            .description(format!("{} can't kick users that has a higher role!", cu.name));
         em
     } else if user.user.bot {
         let em = CreateEmbed::error()
-            .title("Failed to time out user")
+            .title("Failed to kick user")
             .description("User is a bot.");
         em
     } else {
-        match user.edit(ctx.http(), EditMember::new()
-                .disable_communication_until(duration_to_rfc3339(dur))
-                .audit_log_reason(&format!("{}: {}", ctx.author().name, rea))).await {
+        match user.kick_with_reason(ctx.http(), &format!("{}: {}", ctx.author().name, rea)).await {
             Ok(_) => {
                 let em = CreateEmbed::success()
-                    .title(format!("{} has been timed out", user.display_name()))
+                    .title(format!("{} has been kicked", user.display_name()))
                     .description(rea)
-                    .field("Duration", format_duration(dur), true)
-                    .field("Timed out by", ctx.author().mention().to_string(), true);
+                    .field("Kicked by", ctx.author().mention().to_string(), true);
                 em
             }
             Err(e) => {
                 let em = CreateEmbed::error()
-                    .title("Failed to time out user")
+                    .title("Failed to kick user")
                     .description(e.to_string());
                 em
             }
