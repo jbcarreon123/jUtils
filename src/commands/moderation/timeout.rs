@@ -23,7 +23,7 @@ pub async fn timeout(
     #[description="The user to time out."]
     mut user: Member,
     #[description="The timeout duration."]
-    time: String,
+    duration: String,
     #[description="The timeout reason, if any."]
     reason: Option<String>
 ) -> Result<(), poise::serenity_prelude::Error> {
@@ -34,7 +34,7 @@ pub async fn timeout(
         Some(str) => str,
         None => "No reason provided".to_owned()
     };
-    let dur: Duration = DurationString::from_string(String::from(time)).unwrap().into();
+    let dur: Duration = DurationString::from_string(String::from(duration)).unwrap().into();
     let guild = ctx.http().get_guild(ctx.guild_id().expect("Expected GuildId")).await.expect("Expected Guild");
     let embed: CreateEmbed =
     if &user.user == ctx.author() {

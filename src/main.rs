@@ -2,11 +2,16 @@ pub mod commands;
 pub mod types;
 pub mod config;
 pub mod utils;
+pub mod send;
+pub mod database;
 
 use commands::utils::*;
 use commands::about::*;
 use commands::moderation::*;
+use commands::internal::*;
 
+use config::Config;
+use database::load_db;
 use rand::seq::SliceRandom;
 use std::thread;
 use poise::serenity_prelude::CreateEmbed;
@@ -19,15 +24,18 @@ use serenity::prelude::*;
 use poise::serenity_prelude::ActivityData;
 use poise::serenity_prelude::Ready;
 use tracing::log::warn;
+use once_cell::sync::Lazy;
 
 struct Handler;
+
+pub static CONFIG: Lazy<Config> = Lazy::new(|| config::load_config().expect("Expected the config to be found."));
 
 #[async_trait]
 impl EventHandler for Handler {
     async fn ready(&self, ctx: poise::serenity_prelude::Context, ready: Ready) {
         println!("{} is connected!", ready.user.name);
-        let config = config::load_config().expect("Expected the config to be found.");
-        let mut strings = config.motd.motd_strings;
+        let strs: &Vec<String> = &CONFIG.motd.motd_strings;
+        let mut strings = strs.clone();
 
         let _handle = thread::spawn(move || {
             for _i in 0.. {
@@ -37,14 +45,14 @@ impl EventHandler for Handler {
                 }
                 let mut rng = rand::thread_rng();
                 strings.shuffle(&mut rng);
-                let helpstr = if config.motd.include_help_prefix {
-                    format!("{}help | ", config.discordbot.prefix)
+                let helpstr = if CONFIG.motd.include_help_prefix {
+                    format!("{}help | ", CONFIG.discordbot.prefix)
                 } else {
                     String::new()
                 };
 
                 ctx.shard.set_activity(Some(ActivityData::custom(format!("{}{}", helpstr, strings.choose(&mut rng).unwrap()))));
-                thread::sleep(Duration::from_secs(config.motd.motd_timeout));
+                thread::sleep(Duration::from_secs(CONFIG.motd.motd_timeout));
             }
         });
     }
@@ -52,8 +60,7 @@ impl EventHandler for Handler {
 
 #[tokio::main]
 async fn main() {
-    let config = config::load_config().expect("Expected the config to be found.");
-    let token = config.discordbot.token;
+    let token: &str = &CONFIG.discordbot.token;
     let intents = serenity::GatewayIntents::non_privileged()
         | GatewayIntents::GUILD_MESSAGES
         | GatewayIntents::DIRECT_MESSAGES
@@ -70,9 +77,13 @@ async fn main() {
                 npm::npm(),
                 nuget::nuget(),
                 pypi::pypi(),
-                github::github()],
+                github::github(),
+                send_to_bots_behalf::stbb(),
+                warn::warn(),
+                list_warns::warns()
+            ],
             prefix_options: poise::PrefixFrameworkOptions {
-                prefix: Some(config.discordbot.prefix.into()),
+                prefix: Some(CONFIG.discordbot.prefix.clone().into()),
                 mention_as_prefix: true,
                 ..Default::default()
             },
@@ -129,7 +140,7 @@ async fn main() {
                         ).await {
                             warn!("{}", e)
                         }
-                    } else if let poise::FrameworkError::UnknownCommand { ctx, msg, prefix, msg_content, framework, invocation_data, trigger, .. } = error {
+                    } else if let poise::FrameworkError::UnknownCommand { ctx, msg, msg_content,  .. } = error {
                         let cmd = msg_content.split(" ").next();
 
                         if let Err(e) = msg.reply(ctx.http(), format!("There is no such command called **{}**!", cmd.unwrap_or("{unknown}"))).await {

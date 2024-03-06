@@ -1,8 +1,7 @@
 use poise::serenity_prelude::Colour;
-use std::fmt;
 use poise::serenity_prelude::CreateEmbed;
 
-use crate::config;
+use crate::CONFIG;
 
 pub struct Data {} type Error = poise::serenity_prelude::Error;
 pub type Context<'a> = poise::Context<'a, Data, Error>;
@@ -17,33 +16,28 @@ pub trait EmbedHelper {
 
 impl EmbedHelper for CreateEmbed {
     fn primary() -> CreateEmbed {
-        let config = config::load_config().expect("Expected the config to be found.");
         let embed = CreateEmbed::default()
-            .color(Colour::from_rgb(config.colors.primary[0], config.colors.primary[1], config.colors.primary[2]));
+            .color(Colour::from_rgb(CONFIG.colors.primary[0], CONFIG.colors.primary[1], CONFIG.colors.primary[2]));
         embed
     }
     fn secondary() -> CreateEmbed {
-        let config = config::load_config().expect("Expected the config to be found.");
         let embed = CreateEmbed::default()
-            .color(Colour::from_rgb(config.colors.secondary[0], config.colors.secondary[1], config.colors.secondary[2]));
+            .color(Colour::from_rgb(CONFIG.colors.secondary[0], CONFIG.colors.secondary[1], CONFIG.colors.secondary[2]));
         embed
     }
     fn success() -> CreateEmbed {
-        let config = config::load_config().expect("Expected the config to be found.");
         let embed = CreateEmbed::default()
-            .color(Colour::from_rgb(config.colors.success[0], config.colors.success[1], config.colors.success[2]));
+            .color(Colour::from_rgb(CONFIG.colors.success[0], CONFIG.colors.success[1], CONFIG.colors.success[2]));
         embed.to_owned()
     }
     fn error() -> CreateEmbed {
-        let config = config::load_config().expect("Expected the config to be found.");
         let embed = CreateEmbed::default()
-            .color(Colour::from_rgb(config.colors.error[0], config.colors.error[1], config.colors.error[2]));
+            .color(Colour::from_rgb(CONFIG.colors.error[0], CONFIG.colors.error[1], CONFIG.colors.error[2]));
         embed
     }
     fn invis() -> CreateEmbed {
-        let config = config::load_config().expect("Expected the config to be found.");
         let embed = CreateEmbed::default()
-            .color(Colour::from_rgb(config.colors.invis[0], config.colors.invis[1], config.colors.invis[2]));
+            .color(Colour::from_rgb(CONFIG.colors.invis[0], CONFIG.colors.invis[1], CONFIG.colors.invis[2]));
         embed
     }
 }

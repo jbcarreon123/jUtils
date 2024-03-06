@@ -1,12 +1,16 @@
+use chrono::TimeDelta;
 use poise::serenity_prelude as serenity;
 use poise::serenity_prelude::CreateAllowedMentions as am;
 use poise::serenity_prelude::PartialGuild;
+use rand::distributions::Alphanumeric;
+use rand::thread_rng;
+use rand::Rng;
 use ::serenity::all::CreateActionRow;
 use ::serenity::all::CreateButton;
 use ::serenity::all::CreateEmbed;
 use std::time::Duration;
-use crate::config;
 use crate::EmbedHelper;
+use crate::CONFIG;
 use poise::serenity_prelude::Context;
 use poise::serenity_prelude::UserId;
 use poise::Command;
@@ -35,7 +39,6 @@ pub async fn get_command<U, E>(
     ctx: poise::Context<'_, U, E>,
     cmd: String
 ) -> Result<CreateEmbed, serenity::Error> {
-    let config = config::load_config().expect("Expected the config to be found.");
     let mut commands = Vec::<&Command<U, E>>::new();
     for cmd in &ctx.framework().options().commands {
         commands
@@ -83,9 +86,12 @@ pub async fn get_command<U, E>(
 pub async fn get_all_commands_as_embedfields<U, E>(
     ctx: poise::Context<'_, U, E>
 ) -> Result<Vec<Vec<(String, String, bool)>>, serenity::Error> {
-    let config = config::load_config().expect("Expected the config to be found.");
     let mut commands = Vec::<&Command<U, E>>::new();
     for cmd in &ctx.framework().options().commands {
+        if cmd.hide_in_help {
+            continue
+        }
+
         commands
             .push(cmd);
     }
@@ -101,7 +107,7 @@ pub async fn get_all_commands_as_embedfields<U, E>(
             None => "".to_owned()
         };
         let pref = if ctx.prefix().starts_with("<@") {
-            config.discordbot.prefix.clone()
+            CONFIG.discordbot.prefix.clone()
         } else {
             ctx.prefix().to_owned()
         };
@@ -148,6 +154,11 @@ pub fn duration_to_rfc3339(duration: Duration) -> String {
     let now: DateTime<Utc> = Utc::now();
     let datetime = now + duration;
     datetime.to_rfc3339()
+}
+
+pub fn duration_to_datetime(duration: std::time::Duration) -> chrono::DateTime<Utc> {
+    let now: DateTime<Utc> = Utc::now();
+    now + duration
 }
 
 pub async fn compare_roles(ctx: &Context, guild: PartialGuild, user_id: UserId) -> bool {
@@ -239,4 +250,12 @@ pub async fn send_package_info<'a, U, E>(ctx: poise::Context<'a, U, E>, package_
     }
 
     Ok(())
+}
+
+pub fn generate_id(num: usize) -> String {
+    thread_rng()
+        .sample_iter(&Alphanumeric)
+        .take(num)
+        .map(char::from)
+        .collect()
 }

@@ -1,11 +1,9 @@
-use chrono::DateTime;
 use poise::serenity_prelude::Error;
 use crate::types::Context;
 use crate::EmbedHelper;
 use poise::serenity_prelude::CreateEmbed;
 use poise::serenity_prelude::*;
 use poise::serenity_prelude::CreateAllowedMentions as am;
-use reqwest::*;
 
 #[poise::command(
     prefix_command,

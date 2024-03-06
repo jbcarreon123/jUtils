@@ -5,22 +5,22 @@ use poise::serenity_prelude::CreateAllowedMentions as am;
 use poise::serenity_prelude::*;
 use crate::utils::*;
 
-/// Kicks a user.
+/// Bans a user.
 #[poise::command(
     slash_command,
     prefix_command,
     category="Moderation",
-    required_permissions = "KICK_MEMBERS",
-    default_member_permissions = "KICK_MEMBERS",
-    required_bot_permissions = "KICK_MEMBERS | SEND_MESSAGES | EMBED_LINKS",
+    required_permissions = "BAN_MEMBERS",
+    default_member_permissions = "BAN_MEMBERS",
+    required_bot_permissions = "BAN_MEMBERS | SEND_MESSAGES | EMBED_LINKS",
     guild_only,
-    aliases("remove")
+    aliases("blacklist", "blkl")
 )]
-pub async fn kick(
+pub async fn ban(
     ctx: Context<'_>,
-    #[description="The user to kick."]
+    #[description="The user to ban."]
     user: Member,
-    #[description="The kick reason, if any."]
+    #[description="The ban reason, if any."]
     reason: Option<String>
 ) -> Result<(), poise::serenity_prelude::Error> {
     _ = ctx.defer().await;
@@ -34,31 +34,31 @@ pub async fn kick(
     let embed: CreateEmbed =
     if &user.user == ctx.author() {
         let em = CreateEmbed::error()
-            .title("Failed to kick user")
-            .description("You cannot kick yourself.");
+            .title("Failed to ban user")
+            .description("You cannot ban yourself.");
         em
     } else if compare_roles(ctx.serenity_context(), guild, user.user.id).await {
         let em = CreateEmbed::error()
-            .title("Failed to kick user")
-            .description(format!("{} can't kick users that has a higher role!", cu.name));
+            .title("Failed to ban user")
+            .description(format!("{} can't ban users that has a higher role!", cu.name));
         em
     } else if user.user.bot {
         let em = CreateEmbed::error()
-            .title("Failed to kick user")
+            .title("Failed to ban user")
             .description("User is a bot.");
         em
     } else {
-        match user.kick_with_reason(ctx.http(), &format!("{}: {}", ctx.author().name, rea)).await {
+        match user.ban_with_reason(ctx.http(), &format!("{}: {}", ctx.author().name, rea)).await {
             Ok(_) => {
                 let em = CreateEmbed::success()
-                    .title(format!("{} has been kicked", user.display_name()))
+                    .title(format!("{} has been banned", user.display_name()))
                     .description(rea)
-                    .field("Kicked by", ctx.author().mention().to_string(), true);
+                    .field("Banned by", ctx.author().mention().to_string(), true);
                 em
             }
             Err(e) => {
                 let em = CreateEmbed::error()
-                    .title("Failed to kick user")
+                    .title("Failed to ban user")
                     .description(e.to_string());
                 em
             }

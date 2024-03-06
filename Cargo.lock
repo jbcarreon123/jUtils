@@ -953,9 +953,12 @@ dependencies = [
 name = "jutils"
 version = "0.1.0"
 dependencies = [
+ "bson",
  "chrono",
  "duration-string",
  "mongod",
+ "mongodb",
+ "once_cell",
  "poise",
  "rand",
  "reqwest",
