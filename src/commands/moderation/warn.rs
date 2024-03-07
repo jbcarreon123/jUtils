@@ -26,7 +26,8 @@ use serde_json::Serializer;
     default_member_permissions = "MODERATE_MEMBERS",
     required_bot_permissions = "MODERATE_MEMBERS | SEND_MESSAGES | EMBED_LINKS",
     guild_only,
-    aliases("strike")
+    aliases("strike"),
+    identifying_name = "jUtils.moderation.warns.warn"
 )]
 pub async fn warn(
     ctx: Context<'_>,

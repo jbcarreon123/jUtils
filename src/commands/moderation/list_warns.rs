@@ -25,7 +25,10 @@ use serde_json::Serializer;
     prefix_command,
     category="Moderation",
     guild_only,
-    aliases("strikes")
+    aliases("strikes"),
+    broadcast_typing,
+    track_deletion,
+    identifying_name = "jUtils.moderation.warns.list_warns"
 )]
 pub async fn warns(
     ctx: Context<'_>,

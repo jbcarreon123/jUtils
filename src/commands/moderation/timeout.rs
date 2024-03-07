@@ -16,7 +16,8 @@ use crate::utils::*;
     default_member_permissions = "MODERATE_MEMBERS",
     required_bot_permissions = "MODERATE_MEMBERS | SEND_MESSAGES | EMBED_LINKS",
     guild_only,
-    aliases("mute", "tm", "moderate", "unvoice")
+    aliases("mute", "tm", "moderate", "unvoice"),
+    identifying_name = "jUtils.moderation.timeout"
 )]
 pub async fn timeout(
     ctx: Context<'_>,

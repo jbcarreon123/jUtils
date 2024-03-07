@@ -53,6 +53,12 @@ pub struct ColorsConfig {
 }
 
 #[derive(Debug, Deserialize)]
+pub struct EmojiConfig {
+    pub check_box: String,
+    pub cross_box: String
+}
+
+#[derive(Debug, Deserialize)]
 pub struct Config {
     pub discordbot: DiscordBotConfig,
     pub database: DatabaseConfig,
@@ -62,6 +68,7 @@ pub struct Config {
     pub about: AboutConfig,
     pub jutils: JUtilsConfig,
     pub colors: ColorsConfig,
+    pub emoji: EmojiConfig
 }
 
 pub fn load_config() -> Result<Config, Box<dyn std::error::Error>> {

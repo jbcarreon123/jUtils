@@ -5,10 +5,7 @@ pub mod utils;
 pub mod send;
 pub mod database;
 
-use commands::utils::*;
-use commands::about::*;
-use commands::moderation::*;
-use commands::internal::*;
+use commands::*;
 
 use config::Config;
 use database::load_db;
@@ -71,7 +68,7 @@ async fn main() {
             commands: vec![
                 ping::ping(),
                 help::help(),
-                about(),
+                about::about(),
                 timeout::timeout(),
                 crates::crates(),
                 npm::npm(),
@@ -80,7 +77,13 @@ async fn main() {
                 github::github(),
                 send_to_bots_behalf::stbb(),
                 warn::warn(),
-                list_warns::warns()
+                kick::kick(),
+                ban::ban(),
+                list_warns::warns(),
+                permissions::permissions(),
+
+                ee::roc(),
+                ee::gowthr()
             ],
             prefix_options: poise::PrefixFrameworkOptions {
                 prefix: Some(CONFIG.discordbot.prefix.clone().into()),

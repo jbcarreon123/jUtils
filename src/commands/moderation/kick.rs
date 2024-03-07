@@ -14,7 +14,8 @@ use crate::utils::*;
     default_member_permissions = "KICK_MEMBERS",
     required_bot_permissions = "KICK_MEMBERS | SEND_MESSAGES | EMBED_LINKS",
     guild_only,
-    aliases("remove")
+    aliases("remove"),
+    identifying_name = "jUtils.moderation.kick"
 )]
 pub async fn kick(
     ctx: Context<'_>,

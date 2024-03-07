@@ -15,7 +15,9 @@ use poise::serenity_prelude::CreateEmbed;
 #[poise::command(
     prefix_command,
     hide_in_help,
-    owners_only
+    owners_only,
+    track_deletion,
+    identifying_name = "jUtils.internal.stbb"
 )]
 pub async fn stbb(
     ctx: Context<'_>,
@@ -54,9 +56,6 @@ pub async fn stbb(
         .add_embed(e)
         .components(components)).await;
 
-    let msg = ctx.send(CreateReply::default().content("Done!")).await;
-    sleep(Duration::from_secs(2)).await;
-    let m = msg.expect("Expected message");
-    _ = m.delete(ctx).await;
+    _ = ctx.send(CreateReply::default().content("Done!")).await;
     Ok::<(), Error>(())
 }

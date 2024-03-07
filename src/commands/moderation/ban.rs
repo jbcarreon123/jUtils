@@ -14,7 +14,8 @@ use crate::utils::*;
     default_member_permissions = "BAN_MEMBERS",
     required_bot_permissions = "BAN_MEMBERS | SEND_MESSAGES | EMBED_LINKS",
     guild_only,
-    aliases("blacklist", "blkl")
+    aliases("blacklist", "blkl"),
+    identifying_name = "jUtils.moderation.ban"
 )]
 pub async fn ban(
     ctx: Context<'_>,
@@ -48,7 +49,7 @@ pub async fn ban(
             .description("User is a bot.");
         em
     } else {
-        match user.ban_with_reason(ctx.http(), &format!("{}: {}", ctx.author().name, rea)).await {
+        match user.ban_with_reason(ctx.http(), 4, &format!("{}: {}", ctx.author().name, rea)).await {
             Ok(_) => {
                 let em = CreateEmbed::success()
                     .title(format!("{} has been banned", user.display_name()))
