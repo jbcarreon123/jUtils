@@ -1,21 +1,15 @@
-use std::error::Error;
-
-use chrono::Duration;
 use duration_string::DurationString;
 use poise::serenity_prelude::Error as PoiseError;
-use serde_json::json;
 use serenity::all::Member;
 use serenity::all::Mentionable;
 use crate::database::create_warn;
-use crate::database::load_db;
-use crate::database::Warn;
+use crate::database::is_guild_configured;
 use crate::types::Context;
 use crate::utils::duration_to_datetime;
 use crate::utils::format_duration;
 use poise::serenity_prelude::CreateEmbed;
 use poise::serenity_prelude::CreateAllowedMentions as am;
 use crate::types::EmbedHelper;
-use serde_json::Serializer;
 
 /// Warn a user
 #[poise::command(
@@ -27,7 +21,8 @@ use serde_json::Serializer;
     required_bot_permissions = "MODERATE_MEMBERS | SEND_MESSAGES | EMBED_LINKS",
     guild_only,
     aliases("strike"),
-    identifying_name = "jUtils.moderation.warns.warn"
+    identifying_name = "jUtils.moderation.warns.warn",
+    check = "is_guild_configured"
 )]
 pub async fn warn(
     ctx: Context<'_>,
@@ -45,7 +40,7 @@ pub async fn warn(
     };
     let dur: std::time::Duration = DurationString::from_string(String::from(duration)).unwrap().into();
     let dt = duration_to_datetime(dur);
-    let embed = match create_warn(ctx.author().id.into(), user.user.id.into(), rea.clone(), dt).await {
+    let embed = match create_warn(ctx.author().id.to_string(), user.user.id.to_string(), rea.clone(), dt).await {
         Ok(id) => {
             CreateEmbed::success()
                 .title(format!("{} has been warned", user.user.name))

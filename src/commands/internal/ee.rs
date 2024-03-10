@@ -1,8 +1,8 @@
 use poise::serenity_prelude::Error;
 use crate::types::Context;
-use poise::serenity_prelude::CreateEmbed;
+
 use poise::serenity_prelude::CreateAllowedMentions as am;
-use crate::types::EmbedHelper;
+
 
 #[poise::command(
     prefix_command,
@@ -23,6 +23,22 @@ pub async fn roc(
 #[poise::command(
     prefix_command,
     hide_in_help,
+    identifying_name = "jUtils.internal.ee.roc2"
+)]
+pub async fn rock(
+    ctx: Context<'_>
+) -> Result<(), Error> {
+    ctx.send(poise::CreateReply::default()
+        .content("<:roc:1212454531292733510>")
+        .reply(true)
+        .allowed_mentions(am::new().all_roles(false).all_users(false).everyone(false))
+    ).await?;
+    Ok::<(), Error>(())
+}
+
+#[poise::command(
+    prefix_command,
+    hide_in_help,
     identifying_name = "jUtils.internal.ee.gowthr"
 )]
 pub async fn gowthr(
@@ -30,6 +46,38 @@ pub async fn gowthr(
 ) -> Result<(), Error> {
     ctx.send(poise::CreateReply::default()
         .content("Gowthr was here...")
+        .reply(true)
+        .allowed_mentions(am::new().all_roles(false).all_users(false).everyone(false))
+    ).await?;
+    Ok::<(), Error>(())
+}
+
+#[poise::command(
+    prefix_command,
+    hide_in_help,
+    identifying_name = "jUtils.internal.ee.jutils"
+)]
+pub async fn utils(
+    ctx: Context<'_>
+) -> Result<(), Error> {
+    ctx.send(poise::CreateReply::default()
+        .content("Beep boop, I'm a bot.")
+        .reply(true)
+        .allowed_mentions(am::new().all_roles(false).all_users(false).everyone(false))
+    ).await?;
+    Ok::<(), Error>(())
+}
+
+#[poise::command(
+    prefix_command,
+    hide_in_help,
+    identifying_name = "jUtils.internal.ee.jb"
+)]
+pub async fn b(
+    ctx: Context<'_>
+) -> Result<(), Error> {
+    ctx.send(poise::CreateReply::default()
+        .content("Narito si jb!")
         .reply(true)
         .allowed_mentions(am::new().all_roles(false).all_users(false).everyone(false))
     ).await?;

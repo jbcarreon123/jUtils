@@ -1,23 +1,12 @@
-use std::error::Error;
-
-use chrono::Duration;
-use duration_string::DurationString;
 use poise::serenity_prelude::Error as PoiseError;
-use serde_json::json;
 use serenity::all::Member;
-use serenity::all::Mentionable;
-use crate::database::create_warn;
 use crate::database::get_warnings_by_user;
-use crate::database::load_db;
-use crate::database::Warn;
 use crate::database::WarnEmbedHelper;
 use crate::types::Context;
-use crate::utils::duration_to_datetime;
-use crate::utils::format_duration;
 use poise::serenity_prelude::CreateEmbed;
 use poise::serenity_prelude::CreateAllowedMentions as am;
 use crate::types::EmbedHelper;
-use serde_json::Serializer;
+
 
 /// Get warns
 #[poise::command(
@@ -41,7 +30,7 @@ pub async fn warns(
 
     let embed = if user.is_some() && perms.moderate_members() {
         let u = user.unwrap();
-        match get_warnings_by_user(u.user.id.into()).await {
+        match get_warnings_by_user(u.user.id.to_string()).await {
             Ok(w) => w.to_embed(u.user),
             Err(_) => {
                 CreateEmbed::error()
@@ -50,7 +39,7 @@ pub async fn warns(
             }
         }
     } else {
-        match get_warnings_by_user(ctx.author().id.into()).await {
+        match get_warnings_by_user(ctx.author().id.to_string()).await {
             Ok(w) => w.to_embed(ctx.author().to_owned()),
             Err(_) => {
                 CreateEmbed::error()

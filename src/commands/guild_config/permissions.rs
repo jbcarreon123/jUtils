@@ -23,7 +23,7 @@ pub async fn permissions(
     _ = ctx.defer().await;
     let embedflds = get_perms_as_embedfields(ctx.clone()).await.expect("Expected permissions");
 
-    let embed = CreateEmbed::default()
+    let embed = CreateEmbed::primary()
         .title("Permissions of the bot on this server")
         .fields(embedflds.clone());
     ctx.send(poise::CreateReply::default()

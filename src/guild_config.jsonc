@@ -1,0 +1,116 @@
+[
+    {
+        "guild_id": 1212198952649363487,
+        "modules": {
+            "moderation": {
+                "enabled": true,
+                "warns": {
+                    "auto_take_action": true,
+                    "auto_actions": [
+                        {
+                            "warn_count": 2,
+                            // The action for the user.
+                            // MUTE, KICK, or BAN
+                            "action": "MUTE",
+                            // Only required for MUTE, and optional for BAN.
+                            // You shouldn't use this for KICK.
+                            "duration": "01:00:00",
+                            "reason": "You have 2 active warns."
+                        },
+                        {
+                            "warn_count": 3,
+                            "action": "MUTE",
+                            "duration": "03:00:00",
+                            "reason": "You have 3 active warns."
+                        }
+                    ]
+                },
+                "nameban": {
+                    "enabled": true,
+                    "banned_names": [
+                        "test1", "test2", "test3"
+                    ],
+                    // The action for the user.
+                    // KICK or BAN
+                    "action": "KICK",
+                    "reason": "You have a banned name."
+                },
+                "automodhook": {
+                    "enabled": true,
+                    "rules": [
+                        {
+                            "rule_name": "Block Commonly Used Words",
+                            // The action for the user.
+                            // WARN, MUTE, KICK, or BAN
+                            "action": "WARN",
+                            // Only required for WARN and MUTE, and optional for BAN.
+                            // You shouldn't use this for KICK.
+                            "duration": "12:00:00",
+                            "reason": "Check your language, {matchedcontent} is a banned word."
+                        }
+                    ]
+                },
+                "reports": {
+                    "enabled": true,
+                    "report_channel": 1212206318752895086
+                }
+            },
+            "serverqol": {
+                "enabled": true
+            },
+            "utilities": {
+                "enabled": {
+                    "package": true,
+                    "discord_based": true,
+                    "github": true,
+                    "conversion": true,
+                    "trivia": true,
+                    "photos": true
+                },
+                "wiki": {
+                    "enabled": true,
+                    "entries": [
+                        {
+                            "name": "Wikipedia",
+                            "api_url": "https://en.wikipedia.org/w/api.php"
+                        },
+                        {
+                            "name": "Minecraft Wiki",
+                            "api_url": "https://minecraft.wiki/api.php"
+                        }
+                    ]
+                }
+            },
+            "leveling": {
+                "enabled": true,
+                "multiplier": 1.0,
+                "blacklisted_channels": [
+                    1214449636421664768,
+                    1212206962704392323
+                ],
+                "level_up_message": "{member} leveled up to level {level}! GG!"
+            },
+            "starboard": {
+                "enabled": true,
+                "threshold": 2,
+                "channel": 1212415529185189968,
+                "star": ":star:"
+            },
+            "counting": {
+                "enabled": true,
+                "channel": 1212206962704392323,
+                // The mode of the countdown.
+                // DOWN or UP
+                "mode": "DOWN"
+            },
+            "tickets": {
+                "enabled": true,
+                "category": 1212198953416790076,
+                "message": 1215435332380655656
+            },
+            "tagging": {
+                "enabled": true
+            }
+        }
+    }
+]

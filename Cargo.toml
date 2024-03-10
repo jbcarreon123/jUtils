@@ -1,6 +1,6 @@
 [package]
 name = "jutils"
-version = "0.1.0"
+version = "2.0.0-alpha.1"
 edition = "2021"
 authors = ["jbcarreon123 <jbcarreon212@gmail.com>"]
 

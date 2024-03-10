@@ -1,4 +1,4 @@
-use chrono::TimeDelta;
+
 use poise::serenity_prelude as serenity;
 use poise::serenity_prelude::CreateAllowedMentions as am;
 use poise::serenity_prelude::PartialGuild;
@@ -8,8 +8,11 @@ use rand::Rng;
 use ::serenity::all::CreateActionRow;
 use ::serenity::all::CreateButton;
 use ::serenity::all::CreateEmbed;
-use ::serenity::all::Member;
+use ::serenity::all::EmojiId;
+
 use ::serenity::all::Permissions;
+use ::serenity::all::ReactionType;
+use std::str::FromStr;
 use std::time::Duration;
 use crate::EmbedHelper;
 use crate::CONFIG;
@@ -85,6 +88,7 @@ pub async fn get_command<U, E>(
     Ok(embed)
 }
 
+#[allow(suspicious_double_ref_op)]
 pub async fn get_perms_as_embedfields<U, E>(
     ctx: poise::Context<'_, U, E>
 ) -> Result<Vec<(String, String, bool)>, serenity::Error> {
@@ -190,7 +194,7 @@ pub async fn get_all_commands_as_embedfields<U, E>(
         ))
     }
 
-    Ok(chunk(menu, 25))
+    Ok(chunk(menu, 9))
 }
 
 pub fn chunk<T: Clone>(vec: Vec<T>, chunk_size: usize) -> Vec<Vec<T>> {
@@ -330,4 +334,100 @@ pub fn generate_id(num: usize) -> String {
         .take(num)
         .map(char::from)
         .collect()
+}
+
+pub async fn paginate<U, E>(
+    ctx: poise::Context<'_, U, E>,
+    pages: Vec<Vec<(String, String, bool)>>,
+) -> Result<(), serenity::Error> {
+    let ctx_id = ctx.id();
+    let prefix = format!("jutils.help.{}", ctx_id);
+    let prev_button_id = format!("{}.prev", prefix.clone());
+    let next_button_id = format!("{}.next", prefix.clone());
+    let reply = {
+        let components = serenity::CreateActionRow::Buttons(vec![
+            serenity::CreateButton::new(&prev_button_id).emoji('◀'),
+            serenity::CreateButton::new(&next_button_id).emoji('▶'),
+        ]);
+
+        let cu = ctx.http().get_current_user().await.expect("Expected a current user.");
+        let embed = CreateEmbed::primary()
+			.title(format!("Help for {}", cu.name))
+			.fields(pages[0].clone());
+
+        poise::CreateReply::default()
+			.embed(embed)
+            .components([ components ].to_vec())
+			.reply(true)
+			.allowed_mentions(am::new().all_roles(false).all_users(false).everyone(false))
+    };
+    ctx.send(reply).await?;
+    let mut current_page = 0;
+    while let Some(press) = {
+        let prefix_clone = prefix.clone();
+        serenity::collector::ComponentInteractionCollector::new(ctx)
+            .filter(move |press| press.data.custom_id.starts_with(prefix_clone.as_str()))
+            .timeout(std::time::Duration::from_secs(3600 * 24))
+            .await
+    } {
+        if press.data.custom_id == next_button_id {
+            current_page += 1;
+            if current_page >= pages.len() {
+                current_page = 0;
+            }
+        } else if press.data.custom_id == prev_button_id {
+            current_page = current_page.checked_sub(1).unwrap_or(pages.len() - 1);
+        } else {
+            continue;
+        }
+        let cu = ctx.http().get_current_user().await.expect("Expected a current user.");
+        let embed = CreateEmbed::primary()
+			.title(format!("Help for {}", cu.name))
+			.fields(pages[current_page].clone());
+        press
+            .create_response(
+                ctx.serenity_context(),
+                serenity::CreateInteractionResponse::UpdateMessage(
+                    serenity::CreateInteractionResponseMessage::new()
+                        .embed(embed),
+                ),
+            )
+            .await?;
+    }
+
+    Ok(())
+}
+
+pub trait BoolHelper {
+    fn to_reaction(self) -> ReactionType;
+    fn to_reaction_str(self) -> String;
+}
+
+impl BoolHelper for bool {
+    fn to_reaction(self) -> ReactionType {
+        let parts: Vec<&str>;
+        if self {
+            let n = &CONFIG.emoji.check_box;
+            let cleaned_input = n.trim_start_matches("<:").trim_end_matches(">");
+            parts = cleaned_input.split(':').collect();
+        } else {
+            let n = &CONFIG.emoji.cross_box;
+            let cleaned_input = n.trim_start_matches("<:").trim_end_matches(">");
+            parts = cleaned_input.split(':').collect();
+        }
+
+        ReactionType::Custom {
+            animated: false,
+            id: EmojiId::from_str(parts[1]).unwrap(),
+            name: Some(parts[0].to_owned())
+        }
+    }
+
+    fn to_reaction_str(self) -> String {
+        if self {
+            CONFIG.emoji.check_box.clone()
+        } else {
+            CONFIG.emoji.cross_box.clone()
+        }
+    }
 }
