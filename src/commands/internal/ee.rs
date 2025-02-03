@@ -77,7 +77,7 @@ pub async fn b(
     ctx: Context<'_>
 ) -> Result<(), Error> {
     ctx.send(poise::CreateReply::default()
-        .content("Narito si jb!")
+        .content("nope")
         .reply(true)
         .allowed_mentions(am::new().all_roles(false).all_users(false).everyone(false))
     ).await?;

@@ -50,9 +50,10 @@ pub async fn error_event(error: FrameworkError<'_, Data, Error>) {
         ).await {
             warn!("{}", e)
         }
-    } else if let poise::FrameworkError::CommandPanic { ctx, .. } = error {
+    } else if let poise::FrameworkError::CommandPanic { ctx, payload, .. } = error {
         let embed = CreateEmbed::error()
-            .title("A panic has occured while executing this command!");
+            .title("A panic has occured while executing this command!")
+            .description(payload.unwrap_or("".to_owned()));
 
         if let Err(e) = ctx.send(poise::CreateReply::default()
             .embed(embed)
@@ -67,5 +68,7 @@ pub async fn error_event(error: FrameworkError<'_, Data, Error>) {
         if let Err(e) = msg.reply(ctx.http(), format!("`{}`: Unknown command", cmd.unwrap_or("{unknown}"))).await {
             warn!("{}", e)
         }
+    } else {
+        warn!("Unhandled error: {:?}", error.to_string());
     }
 }

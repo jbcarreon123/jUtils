@@ -8,25 +8,13 @@ mod error;
 mod events;
 
 use commands::*;
-
 use config::Config;
-
 use error::error_event;
 use events::Handler;
-
-
-
-
-
-
 use types::*;
 use poise::serenity_prelude as serenity;
 use serenity::prelude::*;
-
-
-
 use once_cell::sync::Lazy;
-
 pub static CONFIG: Lazy<Config> = Lazy::new(|| config::load_config().expect("Expected the config to be found."));
 
 #[tokio::main]
@@ -46,6 +34,7 @@ async fn main() {
                 timeout::timeout(),
                 crates::crates(),
                 npm::npm(),
+                timezone::timezone(),
                 nuget::nuget(),
                 pypi::pypi(),
                 github::github(),
@@ -55,6 +44,9 @@ async fn main() {
                 ban::ban(),
                 list_warns::warns(),
                 invite::invite(),
+                guild::guild(),
+                user::user(),
+                massedit_channel::massedit_channel(),
 
                 permissions::permissions(),
                 guild_config::config::config(),
@@ -68,7 +60,10 @@ async fn main() {
                 ee::utils(),
                 ee::b(),
 
-                test::test()
+                rank::rank(),
+                leaderboard::leaderboard(),
+
+                init_leveling_test::init_leveling_test(),
             ],
             prefix_options: poise::PrefixFrameworkOptions {
                 prefix: Some(CONFIG.discordbot.prefix.clone().into()),

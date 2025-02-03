@@ -15,7 +15,6 @@ use poise::serenity_prelude::CreateEmbed;
 #[poise::command(
     prefix_command,
     hide_in_help,
-    owners_only,
     track_deletion,
     identifying_name = "jUtils.internal.stbb"
 )]

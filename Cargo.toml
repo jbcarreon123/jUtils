@@ -1,6 +1,6 @@
 [package]
 name = "jutils"
-version = "2.0.0-alpha.1"
+version = "2.0.0-alpha.27"
 edition = "2021"
 authors = ["jbcarreon123 <jbcarreon212@gmail.com>"]
 
@@ -8,7 +8,7 @@ authors = ["jbcarreon123 <jbcarreon212@gmail.com>"]
 
 [dependencies]
 poise = "0.6.1"
-serenity = "0.12.1"
+serenity = { version = "0.12.1", features = ["default", "unstable_discord_api"] }
 tokio = { version = "1.36.0", features = ["full"] }
 tracing = "0.1.40"
 serde = { version = "1.0", features = ["derive"] }
@@ -18,9 +18,15 @@ tracing-log = "0.2.0"
 duration-string = "0.3.0"
 chrono = "0.4.34"
 mongod = "0.3.3"
-reqwest = { version = "0.11.24", features = ["json"] }
+reqwest = { version = "0.11.24", features = ["json", "blocking"] }
 serde_json = "1.0.114"
 once_cell = "1.19.0"
 bson = "2.9.0"
 mongodb = { version = "2.8.1", features = ["tokio-sync"] }
 itertools = "0.12.1"
+regex = "1.10.3"
+image = "0.25.0"
+chrono-tz = "0.10.1"
+imageproc = "0.25.0"
+rusttype = "0.9.3"
+ab_glyph = "0.2.29"

@@ -9,6 +9,12 @@ pub struct DiscordBotConfig {
 }
 
 #[derive(Debug, Deserialize)]
+pub struct FontConfig {
+    pub inter: String,
+    pub inter_semibold: String,
+}
+
+#[derive(Debug, Deserialize)]
 pub struct DatabaseConfig {
     pub connection_string: String,
     pub db: String
@@ -62,6 +68,7 @@ pub struct EmojiConfig {
 pub struct Config {
     pub discordbot: DiscordBotConfig,
     pub database: DatabaseConfig,
+    pub font: FontConfig,
     pub github: GitHubConfig,
     pub rsi: RocScamIndexConfig,
     pub motd: MOTDConfig,

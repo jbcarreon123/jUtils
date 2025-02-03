@@ -1,24 +1,26 @@
 use std::str::FromStr;
 use poise::serenity_prelude::Error;
 use serenity::all::ComponentInteractionDataKind;
+use serenity::all::ChannelType;
 use serenity::all::CreateActionRow;
+use serenity::all::CreateButton;
 use serenity::all::CreateSelectMenu;
 use serenity::all::CreateSelectMenuKind;
 use serenity::all::CreateSelectMenuOption;
 use serenity::all::EditMessage;
 use serenity::all::EmojiId;
 use serenity::all::ReactionType;
-use serenity::futures;
-use serenity::futures::Stream;
 use serenity::futures::StreamExt;
 use crate::database::get_guild_config;
+use crate::database::create_new_config;
 use crate::types::Context;
+use crate::utils::utils::BoolHelper;
 use crate::CONFIG;
 use poise::serenity_prelude::CreateEmbed;
 use poise::serenity_prelude::CreateAllowedMentions as am;
 use crate::types::EmbedHelper;
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Debug, poise::ChoiceParameter)]
 pub enum Category {
     Moderation,
     ModerationNameBan,
@@ -152,13 +154,17 @@ const CATEGORY: [&str; 13] = [
 )]
 pub async fn config(
     ctx: Context<'_>,
-    #[autocomplete = "ac_category"]
-    category: Option<String>
+    category: Category
 ) -> Result<(), Error> {
     _ = ctx.defer().await;
 
+    let guild_id = ctx.guild_id().unwrap().to_string();
+    if get_guild_config(guild_id.clone()).await.is_err() {
+        let _ = create_new_config(guild_id).await;
+    }
+
     let conf = get_config(
-        Category::from_friendly_name(category),
+        category,
         ctx
     ).await;
     ctx.send(poise::CreateReply::default()
@@ -170,15 +176,6 @@ pub async fn config(
 
     config_cmp(ctx).await;
     Ok::<(), Error>(())
-}
-
-async fn ac_category<'a>(
-    _ctx: Context<'_>,
-    partial: &'a str,
-) -> impl Stream<Item = String> + 'a {
-    futures::stream::iter(CATEGORY)
-        .filter(move |name| futures::future::ready(name.starts_with(partial)))
-        .map(|name| name.to_string())
 }
 
 async fn get_config(category: Category, ctx: Context<'_>) -> (CreateEmbed, Vec<CreateActionRow>) {
@@ -228,8 +225,6 @@ async fn get_config(category: Category, ctx: Context<'_>) -> (CreateEmbed, Vec<C
     let mut actr = Vec::<CreateActionRow>::new();
     actr.push(CreateActionRow::SelectMenu(selmecat));
 
-    println!("{}", category.to_friendly_name());
-
     match category {
         Category::Moderation => {
             embed = embed.clone()
@@ -247,6 +242,39 @@ async fn get_config(category: Category, ctx: Context<'_>) -> (CreateEmbed, Vec<C
                 .field("Reason", conf.modules.moderation.nameban.reason, true)
                 .field("Banned Names", conf.modules.moderation.nameban.banned_names.join(", "), false);
         }
+        Category::Counting => {
+            let selmechn = CreateSelectMenu::new(
+                format!("jutils.gconfig.selmenu.{}.counting.channel", ctx.id()),
+                CreateSelectMenuKind::Channel {
+                    channel_types: Some(vec![ ChannelType::Text ]),
+                    default_channels: None
+                }
+            )
+                .max_values(1)
+                .min_values(1)
+                .placeholder("Set a channel");
+            embed = embed.clone()
+                .field("Enabled", conf.modules.counting.enabled.to_string(), true)
+                .field("Counting Mode", conf.modules.counting.mode.to_string(), true)
+                .field("Channel", format!("<#{}>", conf.modules.counting.channel), true);
+            actr.push(
+                CreateActionRow::Buttons(
+                    vec![
+                        CreateButton::new(format!("jutils.gconfig.button.{}.counting.toggle", ctx.id()))
+                            .label(
+                                if conf.modules.counting.enabled {
+                                    "Disable"
+                                } else {
+                                    "Enable"
+                                }
+                            ),
+                        CreateButton::new(format!("jutils.gconfig.button.{}.counting.toggle_mode", ctx.id()))
+                            .label(format!("{}", conf.modules.counting.mode.to_string()))
+                    ]
+                )
+            );
+            actr.push(CreateActionRow::SelectMenu(selmechn));
+        }
         _ => {}
     };
 
@@ -255,19 +283,20 @@ async fn get_config(category: Category, ctx: Context<'_>) -> (CreateEmbed, Vec<C
 
 pub async fn config_cmp(ctx: Context<'_>) {
     let prefix_selmenu = format!("jutils.gconfig.selmenu.{}", ctx.id());
+    let prefix_button = format!("jutils.gconfig.button.{}", ctx.id());
     let category_selmenu_id = format!("{}.category", prefix_selmenu.clone());
     while let Some(mut press) = {
         let prefix_selmenu_clone = prefix_selmenu.clone();
+        let prefix_button_clone = prefix_button.clone();
         serenity::collector::ComponentInteractionCollector::new(ctx)
             .filter(move |press|
-                press.data.custom_id.starts_with(prefix_selmenu_clone.as_str())
+                press.data.custom_id.starts_with(prefix_selmenu_clone.as_str()) ||
+                press.data.custom_id.starts_with(prefix_button_clone.as_str())
             )
             .timeout(std::time::Duration::from_secs(3600 * 24))
             .await
     } {
         _ = press.defer(ctx.http()).await;
-        println!("{}", press.clone().data.custom_id);
-        println!("{}", category_selmenu_id);
         if press.clone().data.custom_id == category_selmenu_id {
             if let ComponentInteractionDataKind::StringSelect { values } = press.clone().data.kind {
                 let conf = get_config(

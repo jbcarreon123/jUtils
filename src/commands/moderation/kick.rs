@@ -3,7 +3,7 @@ use crate::EmbedHelper;
 use poise::serenity_prelude::CreateEmbed;
 use poise::serenity_prelude::CreateAllowedMentions as am;
 use poise::serenity_prelude::*;
-use crate::utils::*;
+use crate::utils::utils::*;
 
 /// Kicks a user.
 #[poise::command(
@@ -42,6 +42,11 @@ pub async fn kick(
         let em = CreateEmbed::error()
             .title("Failed to kick user")
             .description(format!("{} can't kick users that has a higher role!", cu.name));
+        em
+    } else if user.user.id == cu.id {
+        let em = CreateEmbed::error()
+            .title("Failed to ban user")
+            .description("No.");
         em
     } else if user.user.bot {
         let em = CreateEmbed::error()

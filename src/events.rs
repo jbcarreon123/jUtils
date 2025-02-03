@@ -1,6 +1,5 @@
 use std::thread;
 use std::time::Duration;
-
 use poise::async_trait;
 use poise::serenity_prelude as serenity;
 use ::serenity::all::Guild;
@@ -8,10 +7,7 @@ use serenity::prelude::*;
 use poise::serenity_prelude::ActivityData;
 use poise::serenity_prelude::Ready;
 use rand::prelude::SliceRandom;
-
-
 use crate::database::create_new_config;
-
 use crate::CONFIG;
 
 pub struct Handler;

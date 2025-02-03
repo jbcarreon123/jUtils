@@ -1,6 +1,6 @@
 use poise::serenity_prelude::Error;
 use crate::types::Context;
-use crate::utils::*;
+use crate::utils::embed_utils::get_perms_as_embedfields;
 use poise::serenity_prelude::CreateEmbed;
 use poise::serenity_prelude::CreateAllowedMentions as am;
 use crate::types::EmbedHelper;

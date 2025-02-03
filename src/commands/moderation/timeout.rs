@@ -1,11 +1,12 @@
 use crate::types::Context;
+use crate::utils::time_utils::*;
+use crate::utils::utils::*;
 use crate::EmbedHelper;
 use poise::serenity_prelude::CreateEmbed;
 use poise::serenity_prelude::CreateAllowedMentions as am;
 use poise::serenity_prelude::*;
 use duration_string::DurationString;
 use std::time::Duration;
-use crate::utils::*;
 
 /// Times out a user.
 #[poise::command(
@@ -47,6 +48,11 @@ pub async fn timeout(
         let em = CreateEmbed::error()
             .title("Failed to time out user")
             .description(format!("{} can't time out users that has a higher role!", cu.name));
+        em
+    } else if user.user.id == cu.id {
+        let em = CreateEmbed::error()
+            .title("Failed to time out user")
+            .description("No.");
         em
     } else if user.user.bot {
         let em = CreateEmbed::error()
