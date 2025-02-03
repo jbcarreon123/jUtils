@@ -22,7 +22,7 @@ use poise::serenity_prelude::CreateAllowedMentions as am;
 pub async fn leaderboard(
     ctx: Context<'_>
 ) -> Result<(), Error> {
-    _ = ctx.defer();
+    _ = ctx.defer().await;
 
     let fields = get_leaderboard_as_embedfields(ctx.guild_id().unwrap().to_string(), ctx.author().id.clone().to_string()).await;
 

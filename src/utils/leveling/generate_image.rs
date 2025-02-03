@@ -9,6 +9,10 @@ use crate::CONFIG;
 use crate::database::XpPerMessage;
 
 use super::dynamic_image_utils::DynamicImageUtils;
+use font_kit::source::SystemSource;
+use font_kit::properties::Properties;
+use font_kit::handle::Handle;
+use std::sync::Arc;
 
 pub enum Background {
     Url(&'static str),
@@ -35,8 +39,11 @@ pub fn generate_image(
         Background::Color(color) => image::DynamicImage::ImageRgba8(generate_solid_color_image(color, 1250, 400)),
     };
 
-    let inter = ab_glyph::FontArc::try_from_slice(include_bytes!("fonts/Inter-Regular.ttf")).unwrap();
-    let inter_semibold = ab_glyph::FontArc::try_from_slice(include_bytes!("fonts/Inter-Semibold.ttf")).unwrap();
+    let inter_bytes = include_bytes!("fonts/Inter-Regular.ttf");
+    let inter_semibold_bytes = include_bytes!("fonts/Inter-Semibold.ttf");
+
+    let inter = FontArc::try_from_vec(inter_bytes.to_vec()).unwrap();
+    let inter_semibold = FontArc::try_from_vec(inter_semibold_bytes.to_vec()).unwrap();
 
     let white = [255, 255, 255, 255];
 
@@ -47,7 +54,7 @@ pub fn generate_image(
     *warning = None;
     overlay_centered(&mut image, &background);
     overlay_images(&mut image, &avatar, 25, 235);
-    draw_text(&mut image, white, &inter_semibold, 80.0, 175, 235, 600, display_name, warning);
+    draw_text_with_fallback(&mut image, white, &inter_semibold, inter_semibold_bytes, 80.0, 175, 235, 600, display_name, warning);
     draw_text(&mut image, secondary_color, &inter, 50.0, 175, 305, 600, &("@".to_string() + username), warning);
     draw_text(&mut image, secondary_color, &inter, 45.0, 25, 20, 250, guild_name, warning);
     draw_text_level_rank(&mut image, white, secondary_color, &inter_semibold, &inter, 80.0, 40.0, 50.0, 25, 20, 500, level, rank);
@@ -154,4 +161,71 @@ fn draw_progress_bar(
 
 fn font_contains_glyph(font: &FontArc, c: char) -> bool {
     font.glyph_id(c).0 != 0
+}
+
+fn draw_text_with_fallback(
+    image: &mut DynamicImage,
+    color: [u8; 4],
+    font: &FontArc,
+    font_bytes: &[u8],
+    scale: f32,
+    x: i64,
+    y: i64,
+    width: u32,
+    text: &str,
+    warning: &mut Option<String>,
+) {
+    let mut text_dimensions = text_size(scale, font, text);
+    let mut truncated_text = text.to_string();
+    let mut text_dimensions = text_size(scale, font, &truncated_text);
+
+    while text_dimensions.0 > width {
+        if truncated_text.is_empty() {
+            break;
+        }
+        if truncated_text[..].chars().last().unwrap() == '…' {
+            truncated_text.pop();
+        }
+        truncated_text.pop();
+        truncated_text.push('…');
+        text_dimensions = text_size(scale, font, &truncated_text);
+    }
+
+    let mut image_temp = generate_solid_color_image([0, 0, 0, 0], text_dimensions.0 as u32, text_dimensions.1 + 32 as u32);
+    let mut fallback_fonts: Vec<FontArc> = Vec::new();
+
+    for c in text.chars() {
+        if !font_contains_glyph(font, c) {
+            fallback_fonts.push(font.clone());
+            let system_source = SystemSource::new();
+            let mut handles = system_source.all_fonts().unwrap();
+            for handle in handles {
+                if let Handle::Path { path, .. } = handle.clone() {
+                    let data = std::fs::read(path.clone()).unwrap();
+                    let test_font = FontArc::try_from_vec(data).unwrap();
+                    if font_contains_glyph(&test_font, c) {
+                        fallback_fonts.push(test_font);
+                        println!("Found fallback font for character: {}, font: {}", c, path.to_str().unwrap());
+                        break;
+                    }
+                }
+            }
+            if fallback_fonts.is_empty() {
+                *warning = Some("The font does not contain the character: ".to_string() + &c.to_string() + ". \nYour username/display name may not display correctly.");
+            }
+        }
+    }
+
+    let mut current_x = 0;
+    for c in truncated_text.chars() {
+        let font_to_use = fallback_fonts.iter().find(|f| font_contains_glyph(f, c)).unwrap_or(font);
+        let glyph = font_to_use.glyph_id(c).with_scale_and_position(scale, (0.0, 0.0));
+        let glyph_bounds = font_to_use.glyph_bounds(&glyph);
+        let glyph_width = glyph_bounds.width() as u32;
+        draw_text_mut(&mut image_temp, Rgba(color), current_x, 0, scale, font_to_use, &c.to_string());
+        current_x += glyph_width as i32;
+    }
+
+    let mut text_image = DynamicImage::ImageRgba8(image_temp);
+    overlay_images(image, &text_image, x, y);
 }

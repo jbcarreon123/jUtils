@@ -23,7 +23,7 @@ pub async fn rank(
     ctx: Context<'_>,
     user: Option<Member>
 ) -> Result<(), Error> {
-    _ = ctx.defer();
+    _ = ctx.defer().await;
     let user = user.unwrap_or(ctx.author_member().await.unwrap().into_owned());
 
     let banner = match user.user.banner_url() {
