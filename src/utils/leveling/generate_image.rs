@@ -1,19 +1,25 @@
 use image::imageops::FilterType::Lanczos3;
-use image::{DynamicImage, GenericImage, GenericImageView, ImageBuffer, Rgb, Rgba, RgbaImage};
+use image::{DynamicImage, Frames, GenericImage, GenericImageView, ImageBuffer, Rgb, Rgba, RgbaImage};
 use imageproc::drawing::{draw_text_mut, text_size};
 use ab_glyph::{Font, FontArc, FontVec};
 use rusttype::{point, Scale};
+use serenity::Error;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Mutex;
 use tracing::{debug, info};
 use std::io::Cursor;
 use crate::CONFIG;
+use rayon::prelude::*;
 use crate::database::XpPerMessage;
 
+use super::animation_utils::{load_animation_from_url, overlay_image_to_all_frames, AnimationFrame};
 use super::dynamic_image_utils::DynamicImageUtils;
 use font_kit::source::SystemSource;
 use font_kit::properties::Properties;
 use font_kit::handle::Handle;
 use std::sync::Arc;
 
+#[derive(Clone)]
 pub enum Background {
     Url(&'static str),
     Color([u8; 4]),
@@ -65,6 +71,37 @@ pub fn generate_image(
     image
 }
 
+pub fn generate_gif<'a>(
+    username: &'a str,
+    display_name: &'a str,
+    level: u32,
+    xp: u32,
+    xp_needed: u32,
+    rank: u32,
+    guild_name: &'a str,
+    secondary_color: [u8; 4],
+    avatar_url: &'a str,    
+    background: Background,
+    warning: &'a mut Option<String>
+) -> Result<AnimationFrame<'a>, Error> {
+    let image = generate_image(username, display_name, level, xp, xp_needed, rank, guild_name, secondary_color, avatar_url, Background::Color([0, 0, 0, 0]), warning);
+    match background {
+        Background::Url(url) => {
+            let mut frames = load_animation_from_url(url).unwrap();
+            overlay_image_to_all_frames(&mut frames, &image).unwrap();
+            match frames {
+                AnimationFrame::Gif(frames) => Ok(AnimationFrame::Gif(frames)),
+                AnimationFrame::Apng(_) => {
+                    return Err(serenity::Error::Other("APNG support is not implemented yet"));
+                }
+            }
+        },
+        Background::Color(_) => {
+            return Err(serenity::Error::Other("Color background is not supported for GIFs"));
+        }
+    }
+}
+
 fn generate_solid_color_image(color: [u8; 4], width: u32, height: u32) -> ImageBuffer<Rgba<u8>, Vec<u8>> {
     ImageBuffer::from_pixel(width, height, Rgba(color))
 }
@@ -98,7 +135,7 @@ fn draw_text(image: &mut DynamicImage, color: [u8; 4], font: &FontArc, scale: f3
         text_dimensions = text_size(scale, font, &truncated_text);
     }
 
-    let mut image_temp = generate_solid_color_image([0, 0, 0, 0], text_dimensions.0 as u32, text_dimensions.1 + 32 as u32);
+    let mut image_temp = generate_solid_color_image([0, 0, 0, 0], width + 32 as u32, text_dimensions.1 + 32 as u32);
     for c in text.chars() {
         if !font_contains_glyph(font, c) {
             *warning = Some("The font does not contain the character: ".to_string() + &c.to_string() + ". \nYour username/display name may not display correctly.");
@@ -191,34 +228,40 @@ fn draw_text_with_fallback(
         text_dimensions = text_size(scale, font, &truncated_text);
     }
 
-    let mut image_temp = generate_solid_color_image([0, 0, 0, 0], text_dimensions.0 as u32, text_dimensions.1 + 32 as u32);
-    let mut fallback_fonts: Vec<FontArc> = Vec::new();
+    let mut image_temp = generate_solid_color_image([0, 0, 0, 0], width + 32 as u32, text_dimensions.1 + 32 as u32);
+    
+    let fallback_fonts: Arc<Mutex<Vec<FontArc>>> = Arc::new(Mutex::new(Vec::new()));
 
-    for c in text.chars() {
+    let system_source = SystemSource::new();
+    let handles: Vec<Handle> = system_source.all_fonts().unwrap();
+
+    text.chars().collect::<Vec<_>>().par_iter().for_each(|&c| {
+        let mut warning = &warning;
+        let found = Arc::new(AtomicBool::new(false));
         if !font_contains_glyph(font, c) {
-            fallback_fonts.push(font.clone());
-            let system_source = SystemSource::new();
-            let mut handles = system_source.all_fonts().unwrap();
-            for handle in handles {
-                if let Handle::Path { path, .. } = handle.clone() {
-                    let data = std::fs::read(path.clone()).unwrap();
+            let fallback_fonts = Arc::clone(&fallback_fonts);
+            let found_clone = Arc::clone(&found);
+            handles.par_iter().for_each(|handle| {
+                if let Handle::Path { path, .. } = handle {
+                    let data = std::fs::read(path).unwrap();
                     let test_font = FontArc::try_from_vec(data).unwrap();
                     if font_contains_glyph(&test_font, c) {
-                        fallback_fonts.push(test_font);
+                        fallback_fonts.lock().unwrap().push(test_font);
                         println!("Found fallback font for character: {}, font: {}", c, path.to_str().unwrap());
-                        break;
+                        found_clone.store(true, Ordering::Relaxed);
                     }
                 }
-            }
-            if fallback_fonts.is_empty() {
-                *warning = Some("The font does not contain the character: ".to_string() + &c.to_string() + ". \nYour username/display name may not display correctly.");
+            });
+            if !found.load(Ordering::Relaxed) {
+                warning = &&mut Some("The font does not contain the character: ".to_string() + &c.to_string() + ". \nYour username/display name may not display correctly.");
             }
         }
-    }
+    });
 
     let mut current_x = 0;
     for c in truncated_text.chars() {
-        let font_to_use = fallback_fonts.iter().find(|f| font_contains_glyph(f, c)).unwrap_or(font);
+        let fallback_fonts_locked = fallback_fonts.lock().unwrap();
+        let font_to_use = fallback_fonts_locked.iter().find(|f| font_contains_glyph(f, c)).unwrap_or(font);
         let glyph = font_to_use.glyph_id(c).with_scale_and_position(scale, (0.0, 0.0));
         let glyph_bounds = font_to_use.glyph_bounds(&glyph);
         let glyph_width = glyph_bounds.width() as u32;

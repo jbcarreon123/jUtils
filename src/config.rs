@@ -1,3 +1,4 @@
+
 use serde::Deserialize;
 use std::fs::File;
 use std::io::Read;
@@ -65,6 +66,20 @@ pub struct EmojiConfig {
 }
 
 #[derive(Debug, Deserialize)]
+pub struct LevelingCardConfig {
+    /// When to allow animated leveling cards.
+    /// <div class="warning">Enabling this can be computationally expensive.</div>
+    pub allow_animated: bool,
+    /// Users to only render animated cards on.
+    /// Omit this if you want to enable it to everybody.
+    pub allowed_users_animated: Vec<String>
+}
+
+/// The jUtils configuration system.
+/// 
+/// Provides the configs for things that the instance owner
+/// should only configure. All of these requires a bot restart.
+#[derive(Debug, Deserialize)]
 pub struct Config {
     pub discordbot: DiscordBotConfig,
     pub database: DatabaseConfig,
@@ -75,7 +90,8 @@ pub struct Config {
     pub about: AboutConfig,
     pub jutils: JUtilsConfig,
     pub colors: ColorsConfig,
-    pub emoji: EmojiConfig
+    pub emoji: EmojiConfig,
+    pub lvlcard: LevelingCardConfig
 }
 
 pub fn load_config() -> Result<Config, Box<dyn std::error::Error>> {

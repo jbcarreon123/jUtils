@@ -10,6 +10,7 @@ use poise::serenity_prelude::CreateEmbed;
 use poise::serenity_prelude::CreateAllowedMentions as am;
 use crate::types::EmbedHelper;
 
+
 /// Warn a user
 #[poise::command(
     slash_command,
