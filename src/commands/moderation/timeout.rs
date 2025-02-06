@@ -44,7 +44,7 @@ pub async fn timeout(
             .title("Failed to time out user")
             .description("You cannot time out yourself.");
         em
-    } else if compare_roles(ctx.serenity_context(), guild, user.user.id).await {
+    } else if compare_roles(ctx.serenity_context(), guild.clone(), user.user.id).await {
         let em = CreateEmbed::error()
             .title("Failed to time out user")
             .description(format!("{} can't time out users that has a higher role!", cu.name));
@@ -60,15 +60,33 @@ pub async fn timeout(
             .description("User is a bot.");
         em
     } else {
+        let em_dm = CreateEmbed::error()
+            .title("You are timed out on ".to_owned() + &guild.name)
+            .description(&rea)
+            .field("Duration", format_duration(dur), true)
+            .field("Timed out by", ctx.author().mention().to_string(), true);
+        let em_res = user.user.dm(
+            ctx.http(),
+            CreateMessage::new()
+                .embed(em_dm)
+        ).await;
+
         match user.edit(ctx.http(), EditMember::new()
                 .disable_communication_until(duration_to_rfc3339(dur))
                 .audit_log_reason(&format!("{}: {}", ctx.author().name, rea))).await {
             Ok(_) => {
-                let em = CreateEmbed::success()
+                let mut em = CreateEmbed::success()
                     .title(format!("{} has been timed out", user.display_name()))
                     .description(rea)
                     .field("Duration", format_duration(dur), true)
                     .field("Timed out by", ctx.author().mention().to_string(), true);
+                
+                if em_res.is_err() {
+                    em = em.footer(
+                        CreateEmbedFooter::new("Cannot DM user. Possibly his DMs are disabled.")
+                    )
+                }
+                
                 em
             }
             Err(e) => {

@@ -38,7 +38,7 @@ pub async fn kick(
             .title("Failed to kick user")
             .description("You cannot kick yourself.");
         em
-    } else if compare_roles(ctx.serenity_context(), guild, user.user.id).await {
+    } else if compare_roles(ctx.serenity_context(), guild.clone(), user.user.id).await {
         let em = CreateEmbed::error()
             .title("Failed to kick user")
             .description(format!("{} can't kick users that has a higher role!", cu.name));
@@ -54,12 +54,29 @@ pub async fn kick(
             .description("User is a bot.");
         em
     } else {
+        let em_dm = CreateEmbed::error()
+            .title("You are kicked on ".to_owned() + &guild.name)
+            .description(&rea)
+            .field("Kicked by", ctx.author().mention().to_string(), true);
+        let em_res = user.user.dm(
+            ctx.http(),
+            CreateMessage::new()
+                .embed(em_dm)
+        ).await;
+
         match user.kick_with_reason(ctx.http(), &format!("{}: {}", ctx.author().name, rea)).await {
             Ok(_) => {
-                let em = CreateEmbed::success()
+                let mut em = CreateEmbed::success()
                     .title(format!("{} has been kicked", user.display_name()))
                     .description(rea)
                     .field("Kicked by", ctx.author().mention().to_string(), true);
+
+                if em_res.is_err() {
+                    em = em.footer(
+                        CreateEmbedFooter::new("Cannot DM user. Possibly his DMs are disabled.")
+                    )
+                }
+
                 em
             }
             Err(e) => {

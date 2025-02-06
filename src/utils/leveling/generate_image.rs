@@ -8,6 +8,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Mutex;
 use tracing::{debug, info};
 use std::io::Cursor;
+use crate::utils::number_utils::Int64Helper;
 use crate::CONFIG;
 use rayon::prelude::*;
 use crate::database::XpPerMessage;
@@ -28,10 +29,10 @@ pub enum Background {
 pub fn generate_image(
     username: &str,
     display_name: &str,
-    level: u32,
-    xp: u32,
-    xp_needed: u32,
-    rank: u32,
+    level: i64,
+    xp: i64,
+    xp_needed: i64,
+    rank: i64,
     guild_name: &str,
     secondary_color: [u8; 4],
     avatar_url: &str,    
@@ -74,10 +75,10 @@ pub fn generate_image(
 pub fn generate_gif<'a>(
     username: &'a str,
     display_name: &'a str,
-    level: u32,
-    xp: u32,
-    xp_needed: u32,
-    rank: u32,
+    level: i64,
+    xp: i64,
+    xp_needed: i64,
+    rank: i64,
     guild_name: &'a str,
     secondary_color: [u8; 4],
     avatar_url: &'a str,    
@@ -146,31 +147,31 @@ fn draw_text(image: &mut DynamicImage, color: [u8; 4], font: &FontArc, scale: f3
     overlay_images(image, &text_image, x, y);
 }
 
-fn draw_text_level_rank(image: &mut DynamicImage, color: [u8; 4], color_secondary: [u8; 4], font: &FontArc, font_secondary: &FontArc, scale: f32, scale_secondary: f32, gap: f32, x: i64, y: i64, width: u32, level: u32, rank: u32) {
-    let mut level_dimensions = text_size(scale, font, level.to_string().as_str());
+fn draw_text_level_rank(image: &mut DynamicImage, color: [u8; 4], color_secondary: [u8; 4], font: &FontArc, font_secondary: &FontArc, scale: f32, scale_secondary: f32, gap: f32, x: i64, y: i64, width: u32, level: i64, rank: i64) {
+    let mut level_dimensions = text_size(scale, font, level.pretty_format().as_str());
     let mut rank_dimensions = text_size(scale, font, rank.to_string().as_str());
     let mut level_name_dimensions = text_size(scale_secondary, font_secondary, "LEVEL");
     let mut rank_name_dimensions = text_size(scale_secondary, font_secondary, "RANK");
 
     let text_x = (image.dimensions().0 as i64 - (level_dimensions.0 + rank_dimensions.0 + level_name_dimensions.0 + rank_name_dimensions.0 + gap as u32 + 20) as i64) - x;
-    let mut image_temp = generate_solid_color_image([0, 0, 0, 0], (level_dimensions.0 + rank_dimensions.0 + level_name_dimensions.0 + rank_name_dimensions.0 + gap as u32 + 20), (level_dimensions.1 + rank_dimensions.1 + level_name_dimensions.1 + rank_name_dimensions.1 + 16) as u32);
+    let mut image_temp = generate_solid_color_image([0, 0, 0, 0], (level_dimensions.0 + rank_dimensions.0 + level_name_dimensions.0 + rank_name_dimensions.0 + gap as u32 + 20), (level_dimensions.1 + rank_dimensions.1 + level_name_dimensions.1 + rank_name_dimensions.1 + 32) as u32);
     draw_text_mut(&mut image_temp, Rgba(color_secondary), 0, (level_dimensions.1 - level_name_dimensions.1 + 5).try_into().unwrap(), scale_secondary, font_secondary, &"LEVEL");
-    draw_text_mut(&mut image_temp, Rgba(color), level_name_dimensions.0 as i32 + 10, 0, scale, font, &level.to_string());
+    draw_text_mut(&mut image_temp, Rgba(color), level_name_dimensions.0 as i32 + 10, 0, scale, font, &level.pretty_format());
     draw_text_mut(&mut image_temp, Rgba(color_secondary), level_name_dimensions.0 as i32 + level_dimensions.0 as i32 + gap as i32, (rank_dimensions.1 - rank_name_dimensions.1 + 5).try_into().unwrap(), scale_secondary, font_secondary, &"RANK");
     draw_text_mut(&mut image_temp, Rgba(color), level_name_dimensions.0 as i32 + level_dimensions.0 as i32 + gap as i32 + rank_name_dimensions.0 as i32 + 10, 0, scale, font, &rank.to_string());
     let mut text_image = DynamicImage::ImageRgba8(image_temp);
     overlay_images(image, &text_image, text_x, y);
 }
 
-fn draw_text_xp(image: &mut DynamicImage, color: [u8; 4], color_secondary: [u8; 4], font: &FontArc, font_secondary: &FontArc, scale: f32, scale_secondary: f32, x: i64, y: i64, width: u32, xp: u32, xp_needed: u32) {
-    let mut xp_dimensions = text_size(scale, font, xp.to_string().as_str());
-    let mut xp_needed_dimensions = text_size(scale_secondary, font_secondary, &("/".to_string() + xp_needed.to_string().as_str()));
+fn draw_text_xp(image: &mut DynamicImage, color: [u8; 4], color_secondary: [u8; 4], font: &FontArc, font_secondary: &FontArc, scale: f32, scale_secondary: f32, x: i64, y: i64, width: u32, xp: i64, xp_needed: i64) {
+    let mut xp_dimensions = text_size(scale, font, xp.pretty_format().as_str());
+    let mut xp_needed_dimensions = text_size(scale_secondary, font_secondary, &("/".to_string() + xp_needed.pretty_format().as_str()));
 
     let text_x = (image.dimensions().0 as i64 - (xp_dimensions.0 + xp_needed_dimensions.0) as i64) - x;
     let text_y: i64 = (image.dimensions().1 as i64 - xp_dimensions.1 as i64) - y;
-    let mut image_temp = generate_solid_color_image([0, 0, 0, 0], (xp_dimensions.0 + xp_needed_dimensions.0) as u32, (xp_dimensions.1 + 16) as u32);
-    draw_text_mut(&mut image_temp, Rgba(color), 0, 0, scale, font, &xp.to_string());
-    draw_text_mut(&mut image_temp, Rgba(color_secondary), xp_dimensions.0 as i32, (xp_dimensions.1 - xp_needed_dimensions.1 + 10).try_into().unwrap(), scale_secondary, font_secondary, &("/".to_string() + xp_needed.to_string().as_str()));
+    let mut image_temp = generate_solid_color_image([0, 0, 0, 0], (xp_dimensions.0 + xp_needed_dimensions.0) as u32, (xp_dimensions.1 + 32) as u32);
+    draw_text_mut(&mut image_temp, Rgba(color), 0, 0, scale, font, &xp.pretty_format());
+    draw_text_mut(&mut image_temp, Rgba(color_secondary), xp_dimensions.0 as i32, (xp_dimensions.1 - xp_needed_dimensions.1 + 10).try_into().unwrap(), scale_secondary, font_secondary, &("/".to_string() + xp_needed.pretty_format().as_str()));
     let mut text_image = DynamicImage::ImageRgba8(image_temp);
     overlay_images(image, &text_image, text_x, text_y);
 }

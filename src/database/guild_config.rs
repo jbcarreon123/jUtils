@@ -5,8 +5,9 @@ use poise::serenity_prelude::CreateAllowedMentions as am;
 use mongodb::{
     bson::doc, error::Error, options::{FindOptions, UpdateOptions}
 };
+use rand::{random, Rng};
 use serde::{Deserialize, Serialize};
-use serenity::{all::CreateEmbed, futures::StreamExt};
+use serenity::{all::CreateEmbed, futures::{StreamExt, TryStreamExt}};
 use crate::{guild_config::config::Category, EmbedHelper};
 use super::database::*;
 
@@ -108,14 +109,21 @@ pub struct Entry {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct LevelRole {
-    pub level: u32,
+    pub level: i64,
     pub role_id: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct XpPerMessage {
-    pub min: u32,
-    pub max: u32,
+    pub min: i64,
+    pub max: i64,
+}
+
+impl XpPerMessage {
+    pub fn randomize(&self) -> i64 {
+        let mut rng = rand::thread_rng();
+        rng.gen_range(self.min..=self.max)
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -202,6 +210,7 @@ impl GuildConfig {
                     enabled: false,
                     multiplier: 1.0,
                     blacklisted_channels: Vec::<String>::new(),
+                    blacklisted_roles: Vec::<String>::new(),
                     xp_per_message: XpPerMessage {
                         min: 10,
                         max: 30
@@ -268,9 +277,10 @@ pub struct Wiki {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Leveling {
     pub enabled: bool,
-    pub multiplier: f32,
+    pub multiplier: f64,
     pub xp_per_message: XpPerMessage,
     pub blacklisted_channels: Vec<String>,
+    pub blacklisted_roles: Vec<String>,
     pub level_roles: Vec<LevelRole>,
     pub level_up_message: String,
 }
@@ -295,23 +305,21 @@ pub async fn get_guild_config(
 ) -> Result<GuildConfig, mongodb::error::Error> {
     let db = load_db().await;
     let collection = db.collection::<GuildConfig>("guild_config");
-    let filter = doc! { "guild_id": guild_id };
+    let filter = doc! { "guild_id": &guild_id };
     let options = FindOptions::default();
     let mut cursor = match collection.find(filter, options).await {
         Ok(res) => res,
         Err(e) => return Err(e.into())
     };
 
-
-    let mut config: Option<GuildConfig> = None;
+    let mut config = None;
 
     while let Some(result) = cursor.next().await {
         match result {
-            Ok(conf) => {
-                config = Some(conf);
-                break;
+            Ok(cfg) => {
+                config = Some(cfg);
             }
-            Err(e) => return Err(e.into()),
+            Err(e) => return Err(e.into())
         }
     }
 

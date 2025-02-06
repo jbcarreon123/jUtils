@@ -15,6 +15,7 @@ use types::*;
 use poise::serenity_prelude as serenity;
 use serenity::prelude::*;
 use once_cell::sync::Lazy;
+use utils::leveling::event_handler::LevelingHandler;
 pub static CONFIG: Lazy<Config> = Lazy::new(|| config::load_config().expect("Expected the config to be found."));
 
 #[tokio::main]
@@ -87,6 +88,7 @@ async fn main() {
 
     let client = serenity::ClientBuilder::new(token, intents)
         .event_handler(Handler)
+        .event_handler(LevelingHandler)
         .framework(framework)
         .await;
     client.unwrap().start().await.unwrap();

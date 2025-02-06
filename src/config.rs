@@ -95,7 +95,7 @@ pub struct Config {
 }
 
 pub fn load_config() -> Result<Config, Box<dyn std::error::Error>> {
-    let mut file = File::open("CONFIG.toml")?;
+    let mut file = File::open(".cfg/CONFIG.toml")?;
     let mut content = String::new();
     file.read_to_string(&mut content)?;
 
